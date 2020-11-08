@@ -1,31 +1,3 @@
-/**
- * 
- * @author Mirielle S.
- * name: Bat.js
- * Last Revision: 5th Nov. 2020
- * 
- * 
- * MIT License 
- * Copyright (c) 2020 CodeBreaker
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 Object.defineProperties(Math, {
 
     degToRad: {
@@ -715,6 +687,7 @@ class Mat3x3 {
 
 }
 
+
 /**
  * @class Mat4x4
  * A 4x4 matrix class, data could be an array or a Mat4x4 object
@@ -964,128 +937,6 @@ class Mat4x4 {
 }
 
 
-class Collision2D {
-
-
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////// DETECT //////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-    static Detect = class {
-
-        static circle(c1, c2) {
-            if(c1.r === undefined || c2.r === undefined)
-                throw new Error("Insufficient Circle Info: one-or-both circle lacking r attributes");
-            let diff = Vec2d.createFrom(c2.pos).sub(Vec2d.createFrom(c1.pos));
-            return diff.length < c1.r + c2.r
-        }
-
-        static rect(r1, r2) {
-            return !(r1.pos.x > r2.pos.x + r2.dimension.x || r1.pos.x + r1.dimension.x < r2.pos.x ||
-                r1.pos.y > r2.pos.y + r2.dimension.y || r1.pos.y + r1.dimension.y < r2.pos.y);
-        }
-
-
-        static circleRect(c, r) {
-            let diff = {
-                x: Math.abs(c.pos.x - (r.pos.x + r.dimension.x * 0.5)),
-                y: Math.abs(c.pos.y - (r.pos.y + r.dimension.y * 0.5))
-            };
-            if(diff.x > c.r + r.dimension.x * 0.5) return false;
-            if(diff.y > c.r + r.dimension.y * 0.5) return false;
-            if(diff.x <= r.dimension.x) return true;
-            if(diff.y <= r.dimension.y) return true;
-            let dx = diff.x - r.dimension.x;
-            let dy = diff.y - r.dimension.y;
-            return Math.hypot(dx, dy) <= c.r * c.r;
-        }
-
-        /**
-        * @description checks if the point[x, y] is in an arc
-        * @param {Vec2d} p point to be checked
-        * @param {Object} arc arc data
-        // arc objects: {pos,innerRadius:,outerRadius:,startAngle:,endAngle:}
-        // Return true if the x,y point is inside an arc
-        */
-        static isPointInArc(p, arc) {
-            if(arc.pos === undefined || arc.innerRadius === undefined || arc.outerRadius 
-                === undefined || arc.startAngle === undefined || arc.endAngle === undefined)
-                throw new Error(`Insufficient Arc data: Must provide a "pos, innerRadius, outerRadius, startAngle, endAngle"`);
-            let diff = p.sub(Vec2d.createFrom(arc.pos));
-            let rOuter = arc.outerRadius;
-            let rInner = arc.innerRadius;
-            if(diff.length < rInner || diff.length > rOuter) return false;
-            let angle = (diff.angle + Math.PI * 2) % Math.PI*2;
-            return angle >= arc.startAngle && angle <= arc.endAngle;
-        }
-
-        /**
-        * @description checks if the point[x, y] is in a wedge
-        * @param {Vec2d} p point to be checked
-        * @param {Object} wedge wedge data
-        // wedge objects: {pos:,r:,startAngle:,endAngle:}
-        // Return true if the x,y point is inside the closed wedge
-        */
-        static isPointInWedge(p, wedge) {
-            if(wedge.pos === undefined || wedge.r === undefined || wedge.startAngle === undefined)
-                throw new Error(`Insufficient Wedge's data: Must provide a "pos, r, startAngle"`);
-            let PI2 = Math.PI * 2;
-            let diff = p.sub(wedge.pos);
-            let r = wedge.r * wedge.r;
-            if(diff.length > r) return false;
-            let angle = (diff.angle + PI2) % PI2;
-            return angle >= wedge.startAngle && angle <= wedge.endAngle;
-        }
-
-        /**
-        * @description checks if the point[x, y] is in a circle
-        * @param {Vec2d} p point to be checked
-        * @param {Vec2d} c circle component
-        */
-        static isPointInCircle(p, c) {
-            let diff = p.sub(c.pos);
-            return (diff.length < c.r * c.r);
-        }
-
-        /**
-        * @description checks if the point[x, y] is in a rect
-        * @param {Vec2d} p point to be checked
-        * @param {Vec2d} c rect component
-        */
-        static isPointInRect(p, r) {
-            return (p.x > r.pos.x && p.x < r.pos.x + r.dimension.x 
-                && p.y > r.pos.y && p.y < r.pos.y + r.dimension.y);
-        }
-
-        
-
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////// RESOLVE /////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////
-
-    static Resolve = {
-
-
-    }
-
-}
-
-
-class Physics {
-
-    static CreateData(component, data) {
-        // define all physics entities here
-        Object.assign(component, data);
-    }
-
-}
-
-
 Object.defineProperties(HTMLElement.prototype, {
 
     css: {
@@ -1119,11 +970,149 @@ Object.defineProperties(HTMLElement.prototype, {
 
 
 /**
+* Principal class for scene rendering
+* 
+* CONFIG
+* .mirielle        | styling for the mirielle canvas
+* .css           | css stylings for the scene
+* .attr          | html attributes of the scene
+* .dynamic       | determine wether RAF should be enabled
+*
+*/
+
+class GameArea {
+    /**
+    * @constructor
+    * @param {Number} w width of the scene
+    * @param {Number} h height of the scene
+    * @param {Object | String} config configuration data of the scene
+    */
+    constructor(w, h, config) {
+        this.w = w || 300;
+        this.h = h || 300;
+        this.config = config;
+        this.state = false;
+        // game section
+        this.section = document.createElement("section");
+        this.section.style.margin = "0";
+        this.state = false;
+
+        // set other private screens
+        this._preloadScene = new PreloadScene(this.section, this.w, 
+            this.h, this.config);
+        this._mirielleScene = new MirielleScene(this.section, this.w, 
+            this.h, config.mirielle);
+        this.section.class = "gameScene";
+
+        // create the scene
+        this.onReady = null;
+        this._allScenes = [];
+        this.files = [];
+        this._preloadScene.start();
+        document.body.appendChild(this.section);
+    }
+
+    getArea() {
+        return this.section;
+    }
+
+    
+    /**
+    * @method getMedia
+    * @description get any media files from the preloaded array
+    * @returns {HTMLImageElement | HTMLAudioElement}
+    */
+    getMedia(name, type="img") {
+        let preload = this._preloadScene;
+        if(type === "img" || type === "image") {
+            let res = preload._preloadedImages.filter(i => i.name === name)[0];
+            return res.img;
+        }else if(type === "aud" || type === "audio") {
+            let res = preload._preloadedAudios.filter(i => i.name === name)[0];
+            return res.aud;
+        } else if(type === "other" || type === "json") {
+            let res = this._preloadScene._preloadedFiles.filter(i => i.name === name)[0];
+            return res.res;
+        }
+    }
+
+    animate() {
+        const animate = currentTime => {
+            if(typeof this.clear === "function" && typeof this.update === "function") {
+                this.clear();
+                this.update();
+                requestAnimationFrame(animate);
+            }
+        }
+        return animate;
+    }
+
+    init() {
+        const appendChildScene = () => {
+            this._allScenes.forEach(scene => {
+                if(scene instanceof Scene) {
+                    this.section.appendChild(scene.getCanvas());
+                    scene._fpsStarted = performance.now();
+                    scene._elapsedTimeStarted = new Date().getTime();
+                    if(scene.dynamic) {
+                        requestAnimationFrame(scene.animate());
+                    } else {
+                        if(typeof this.update === "function")
+                            scene.update();
+                        else console.error(`Scene does not have a valid update method`);
+                    }
+                } else this.section.appendChild(scene);
+            });
+        }
+
+        let mainInterval = setInterval(() => {
+            if(this._mirielleScene.state) {
+                // has every assets been loaded ?
+                if(this.config.preload.length !== 0) {
+                    Promise.all(this._preloadScene.promisesArr)
+                    .then(value => {
+                        clearInterval(mainInterval);
+                        this.state = true;
+                        this.files.push(this._preloadScene._preloadedFiles);
+                        if(typeof this.onReady === "function") this.onReady();
+                        appendChildScene();
+                    }).catch(value => {
+                        this._preloadScene.activeScene();
+                        // this.state = false;
+                    });
+                } else {
+                    clearInterval(mainInterval);
+                    this.state = true;
+                    appendChildScene();
+                }
+            }
+        }, 0);
+    }
+
+    appendChild(...element) {
+        element.forEach(ele => {
+            if(ele instanceof HTMLElement)
+                this._allScenes.push(ele);
+        }); 
+    }
+
+    getWidth() {
+        return this.w;
+    }
+
+    getHeight() {
+        return this.h;
+    }
+        
+};
+
+
+/**
 * @class CreditScene
 * A class displaying the `BatGames` Engine splashscreen on 
 * every start of a scene.
 */
-class CreditScene {
+class MirielleScene {
 
     /**
     * @constructor
@@ -1133,20 +1122,20 @@ class CreditScene {
     */
     constructor(parent, w, h, config) {
         // create the scene
-        this.parent = parent;
+        this._parent = parent;
         this._canvas = document.createElement("canvas");
         this._canvas.width = w;
         this._canvas.height = h;
         this._canvas.style.position = "absolute";
         this.state = false;
-        this.parent.appendChild(this._canvas);
+        this._parent.appendChild(this._canvas);
 
         // configurations
         this.config = config;
         this.ctx = this._canvas.getContext("2d");
 
         let styles = {
-            duration: Math.max(5, config.duration || 5),
+            duration: 5, //Math.max(5, config.duration || 5),
             fontSize: Math.max(35, config.fontSize) || 35,
             fontFamily: Math.max(35, config.fontFamily) || "Verdana"
         };
@@ -1168,7 +1157,7 @@ class CreditScene {
             let y = (h/2 - 20) + Math.sin(angle) * radius;
             this.ctx.lineTo(x, y);
         }
-        this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#333";
+        this.ctx.fillStyle = this.config.theme === "light" ? "dimgray" : "#333";
         this.ctx.fill();
 
         // bat text
@@ -1182,22 +1171,22 @@ class CreditScene {
         this.ctx.font = `bold ${styles.fontSize - (styles.fontSize-10)}px ${styles.fontFamily}`;
         this.ctx.fillStyle = "red";
         this.ctx.fillText("Games API for web developers on a GO", w/2, h/2 + 20);
-        // this.ctx.strokeStyle = this.config.theme === "light" ? "red" : "#fff";
-        // this.ctx.strokeText("Games API for web developers on a GO", w/2, h/2 + 20);
 
         // copyright
         this.ctx.font = `bold 10px ${styles.fontFamily}`;
         this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#fff";
-        this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 20);
+        this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 50);
 
         // hide this scene after timeout of the specified style's duration
-        setTimeout(() => {
-            this._canvas.style.display = "none";
+        let timer = setTimeout(() => {
+            clearTimeout(timer);
+            this._parent.removeChild(this._canvas);
             this.state = true;
         }, styles.duration * 1000);
     }
 
 }
+
 
 
 /**
@@ -1230,34 +1219,31 @@ class PreloadScene {
 
         // preload
         this.preload = this.config.preload || [];
-        this._preloadedAssetsCounter = 0;
         this._preloadedImages = [];
         this._preloadedAudios = [];
-        this._preloadedOthers = [];
+        this._preloadedFiles = [];
         this._preloadAngle = 0;
         this._preloadScale = 5;
-        this._preloadColorIndex = 0;
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
             let audExtensions = [".mp3"];
-            let otherExtensions = [".txt"];
+            let otherExtensions = ['.json', "other"];
 
             // group preload assets 
             if(this.preload instanceof Array) {
                 this.preload.forEach((data, index) => {
                     // check for images
-                    if(imgExtensions.some(i => data.src.endsWith(i)))
+                    if(imgExtensions.some(i => data.src.endsWith(i)) || data.type !== undefined 
+                        && data.type === "img" || data.type === "image")
                         this._preloadedImages.push({img: new Image(), ind:index, ...data});
                     // check for audios
-                    else if(audExtensions.some(i => data.src.endsWith(i)) || data.type === "aud"
-                        || data.type === "audio")
+                    else if(audExtensions.some(i => data.src.endsWith(i)) || data.type !== undefined 
+                        && data.type === "aud" || data.type === "audio")
                         this._preloadedAudios.push({aud: new Audio(), ind:index, ...data});
-                    // check for text files
-                    else if(otherExtensions.some(i => data.src.endsWith(i))) {
-                        let endExt = data.src.substring(data.src.length-3, data.src.length);
-                        if(endExt === "txt")
-                            this._preloadedOthers.push({x: data.src.name, ...data});
+                    // check for files
+                    else if(data.type !== undefined && otherExtensions.some(i => i === data.type)) {
+                        this._preloadedFiles.push({...data});
                     } else 
                         throw TypeError(`Invalid Media extension for ${data.src}`);
                 });
@@ -1274,28 +1260,58 @@ class PreloadScene {
     * all stored in the configuration's preload array
     */
     start() {
-        const loadingFunction = ()  => {
-            if(this._preloadedAssetsCounter === this.config.preload.length) {
-                this.state = true
-                this._canvas.style.display = "none";
-            }
-        }
 
-        this._preloadedImages.forEach(data => {
-            data.img.addEventListener("load", ()=>{
-                this._preloadedAssetsCounter++;
-                loadingFunction();
+        async function loadImage(data) {
+            let promise = new Promise((resolve, reject) => {
+                data.img.addEventListener("load", () => {
+                    setTimeout(() => resolve(`${data.name} loaded`), 2000);
+                });
+                data.img.addEventListener("error", () => {
+                    reject(`Failed to load the image ${data.img.src}`);
+                });
             });
             data.img.src = data.src;
-        });
+            return promise;
+        }
 
-        this._preloadedAudios.forEach(data => {
-            data.aud.addEventListener("canplaythrough", ()=>{
-                this._preloadedAssetsCounter++;
-                loadingFunction();
+        async function loadAudio(data) {
+            let promise = new Promise((resolve, reject) => {
+                data.aud.addEventListener("canplaythrough", () => {
+                    setTimeout(() => resolve(`${data.name} loaded`), 2000);
+                });
+                data.aud.addEventListener("error", () => {
+                    reject(`Failed to load the Audio ${data.data.src}`);
+                });
             });
             data.aud.src = data.src;
-        });
+            return promise;
+        }
+
+        // {src, type, name, res}
+        async function loadFile(data) {
+            let req = new XMLHttpRequest();
+            let promise = new Promise((resolve, reject) => {
+                req.addEventListener("load", function() {
+                    if(req.status === 200)  {
+                        if(data.type === "json")
+                            data.res = JSON.parse(req.responseText);
+                        else data.res = req.responseText;
+                        resolve({name: data.name, res:data.res, type:"file"});
+                    }
+                });
+                req.addEventListener("error", function() {
+                    reject(`Failed to Load the file ${data.src}`);
+                });
+            });
+            req.open("GET", data.src);
+            req.send();
+            return promise;
+        }
+
+        this.promisesArr = [];
+        this._preloadedImages.forEach((data) => this.promisesArr.push(loadImage(data)));
+        this._preloadedAudios.forEach((data) => this.promisesArr.push(loadAudio(data)));
+        this._preloadedFiles.forEach((data) => this.promisesArr.push(loadFile(data)));
     }
 
     /**
@@ -1305,7 +1321,7 @@ class PreloadScene {
     activeScene() {
         let W = this._canvas.width;
         let H = this._canvas.height;
-        if(this.config.credit.theme === "dark") this.ctx.fillStyle = "#222";
+        if(this.config.mirielle.theme === "dark") this.ctx.fillStyle = "#222";
         else this.ctx.fillStyle = "#fff";
         this.ctx.fillRect(0, 0, W, H);
         let color = ["red", "teal", "yellow", "navy"];
@@ -1332,90 +1348,33 @@ class PreloadScene {
 }
 
 
-/**
-* Principal class for scene rendering
-* 
-* CONFIG
-* .credit        | styling for the credit canvas
-* .css           | css stylings for the scene
-* .attr          | html attributes of the scene
-* .dynamic       | determine wether RAF should be enabled
-*
-*/
-
 class Scene {
-    /**
-    * @constructor
-    * @param {Number} w width of the scene
-    * @param {Number} h height of the scene
-    * @param {Object | String} config configuration data of the scene
-    */
-    constructor(w, h, config, pure=false) {
-        // game section
-        this.section = document.createElement("section");
-        this.section.style.margin = "0";
-        this.pure = pure;
 
+    constructor(parent, dynamic=false) {
+        this._parent = parent;
         // game area
         this._canvas = document.createElement("canvas");
+        this._canvas.style.position = 'absolute';
         this.ctx = this._canvas.getContext("2d");
-        this.config = config || {dynamic: false};
+        this.dynamic = dynamic;
 
         // set css styling
-        this._canvas.width = w || 300;
-        this._canvas.height = h || 300;
-        if(this.config.css !== undefined) {
-            if(!(this.config.css instanceof Object)) 
-                console.error("Scene CSS styling data must be an instance of an Object");
-            else
-                for(const key in this.config.css)
-                    this.section.style[key] = this.config.css[key];
-        }
-
-        // set other private screens
-        this._preloadScene = new PreloadScene(this.section, this._canvas.width, 
-            this._canvas.height, config);
-        this._creditScene = new CreditScene(this.section, this._canvas.width, 
-            this._canvas.height, config.credit);
-
-        // set attributes
+        this._canvas.width = this._parent.w || 300;
+        this._canvas.height = this._parent.h || 300;
         this._canvas["class"] = "canvasScene";
-        this.section.class = "gameScene";
-        if(this.config.attr !== undefined) {
-            if(!(this.config.attr instanceof Object)) 
-                console.error("Scene attributes data must be an instance of an Object");
-            else
-                for(const key in this.config.attr) 
-                    this.section[key] = config.attr[key];
-        }
 
         // functions
-        this.clear = null;
+        this.clear = () => this.ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         this.update = null;
 
-        // create the scene
-        this._preloadScene.start();
-        document.body.appendChild(this.section);
+        this._fpsStarted = performance.now();
+        this._elapsedTimeStarted = new Date().getTime();
+
+        this._parent.getArea().appendChild(this._canvas);
+        this._parent._allScenes.push(this);
     }
 
-    
-    /**
-    * @method getMedia
-    * @description get any media files from the preloaded array
-    * @returns {HTMLImageElement | HTMLAudioElement}
-    */
-    getMedia(name, type="img") {
-        let preload = this._preloadScene;
-        if(type === "img" || type === "image") {
-            let res = preload._preloadedImages.filter(i => i.name === name)[0];
-            return res.img;
-        }else if(type === "aud" || type === "audio") {
-            let res = preload._preloadedAudios.filter(i => i.name === name)[0];
-            return res.aud;
-        } 
-    }
-
-    init() {
+    animate() {
         const animate = currentTime => {
             if(typeof this.clear === "function" && typeof this.update === "function") {
                 this.clear();
@@ -1423,31 +1382,8 @@ class Scene {
                 requestAnimationFrame(animate);
             }
         }
-
-        // start the scene
-        let mainInterval = setInterval(() => {
-            if(this._creditScene.state) {
-                // has every assets been loaded ?
-                if(this._preloadScene.state) {
-                    clearInterval(mainInterval);
-                    this.section.append(this._canvas);
-                    this._fpsStarted = performance.now();
-                    this._elapsedTimeStarted = new Date().getTime();
-                    // i want a redraw frame
-                    if(this.config.dynamic)
-                        requestAnimationFrame(animate);
-                    else {
-                        this.update();
-                    }
-                } else {
-                    this._preloadScene.activeScene();
-                }
-                 
-                
-            }
-        }, 0);
+        return animate;
     }
-
 
     getFPS() {
         let t1 = performance.now();
@@ -1478,39 +1414,15 @@ class Scene {
         return this._canvas.height;
     }
 
-    setWidth(value) {
-        this._canvas.width = value;
-    }
-
-    setHeight(value) {
-        this._canvas.height = value;
-    }
-
-    getAttr(identifier) {
-        return this.section[identifier];
-    }
-
-    setAttr(key, value) {
-        this.section[key] = value;
-    }
-
-    getStyle(identifier) {
-        return this._canvas.style[identifier];
-    }
-
-    setStyle(key, value) {
-        this.section.style[key] = value;
-    }
-
     getCanvas() {
         return this._canvas;
     }
 
     getParent() {
-        return this.section;
+        return this._parent;
     }
-        
-};
+
+}
 
 
 
@@ -1527,16 +1439,15 @@ window.requestAnimationFrame = (function() {
 
 
 /**
-* @class Bat
+* @object Bat
 * Core class containing global API, variables and whatsoever
 */
-class Bat {
+const Bat = {
 
-    static CreditScene = function(parent, w, h, config) { return new CreditScene(parent, w, h, config)}
-    static Scene = function(w, h, config) { return new Scene(w, h, config)}
-
-    static Core = {
-
+    ///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    Core: {
         init(callback) {
             addEventListener("load", () => {
                 if(typeof callback === "function")
@@ -1544,21 +1455,18 @@ class Bat {
                 else
                     throw TypeError("Failed To Initialize Bat: callback must be a function");
             });
-        }  
-    }
-
-    static Utils = class {
-
-        static randFromArray(array) {
-            return array[~~(Math.random() * array.length)]
         }
+    },
 
-        /**
-         * @description converts it's string argument to a css-like format
-         * @param {String} word to be converted to CSS format
-         * @returns {String} the converted word in css-like format
-         */
-        static objectToCSSFormat(word) {
+    ///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    Utils: {
+        randFromArray(array) {
+            return array[~~(Math.random() * array.length)]
+        },
+
+        objectToCSSFormat(word) {
             for(let chr of word) {
                 if(chr.charCodeAt() >= 65 && chr.charCodeAt() <= 90) {
                     let s = chr;
@@ -1574,170 +1482,196 @@ class Bat {
 
 
 
-class Component {
-
-    
-    static Tile = class {
-    
-        constructor(pos, dimension) {
-            this.pos = Vec2d.createFrom(pos);
-            this.dimension = Vec2d.createFrom(dimension);
-            this.velocity = new Vec2d();
-            this.rotation = 0;
-            this.vertices = [];
-
-            this.lastPos = null;
-            this.nextPos = null;
-            this.currentPos = null;
-
-            this._minpos = null;
-            this._maxpos = null;
-        }
-
-        orthCollision(map, velocity, {left=null, top=null}) {
-            if(map.size !== undefined && map.dimension !== undefined) {
-                // X-AXIS
-                this.lastPos = this.pos;
-                this.nextPos = Vec2d.createFrom({
-                    x: player.pos.x + velocity.x,
-                    y: this.lastPos.y
-                });
-                this._minPos = this.nextPos.mult(Vec2d.createFrom(map.size).inverse())
-                    .applyFunc(Math.floor);
-                this._maxPos = this.nextPos.add(this.dimension).mult(Vec2d.createFrom
-                    (map.size).inverse()).applyFunc(Math.ceil);
-
-                for(let r=this._minPos.y; r < this._maxPos.y; r++) {
-                    for(let c=this._minPos.x; c < this._maxPos.x; c++) {
-                        this.currentPos = map.map[r * map.dimension.x + c];
-                        if(typeof left === "function")
-                            left();
-                    }
-                }
-                this.pos = this.nextPos;
-                // Y-AXIS
-                this.lastPos = this.pos;
-                this.nextPos = Vec2d.createFrom({
-                    x: this.lastPos.x,
-                    y: this.lastPos.y + velocity.y
-                });
-                this._minPos = this.nextPos.mult(Vec2d.createFrom(map.size).inverse())
-                    .applyFunc(Math.floor);
-                this._maxPos = this.nextPos.add(this.dimension).mult(Vec2d.createFrom
-                    (map.size).inverse()).applyFunc(Math.ceil);
-
-                for(let r=this._minPos.y; r < this._maxPos.y; r++) {
-                    for(let c=this._minPos.x; c < this._maxPos.x; c++) {
-                        this.currentPos = map.map[r * map.dimension.x + c];
-                        if(typeof top === "function")
-                            top();
-                    }
-                }
-                this.pos = this.nextPos;
-            }
-            
-        }
+class OrthographicMap {
+    static getMapId(map, pos, size = 0) {
+        let p = Vec2d.createFrom(pos);
+        if (map[0][0] !== undefined)
+            return map[p.y][p.x];
+        return map[p.y * size + p.x];
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////   
-    /////////////////////////////////// SPRITES ////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    static Sprite = class {
-
-        /**
-         * @constructor
-         * @param {Object} frames object contain animation frames data array
-         * @param {Number} col number of columns in the spritesheet
-         * @param {Number} delay animation delay
-        */
-        constructor(frames, col, delay=5) {
-            this.col = col;
-            this.frames = frames;
-            this.currentFrames = [];
-            this.frameName = null;
-            for(const i in this.frames) {
-                this.setFrame(i);
-                break;
+    static getTileSetIndex(pos, col) {
+        let v = Vec2d.createFrom(pos);
+        return new Vec2d(v.x % col, v.y / col);
+    }
+    /**
+     * @constructor
+     * @param {Array} map map data
+     * @param {Vec2d} size size of each tiles in the map
+     */
+    constructor(map, size, dimension) {
+        if (map instanceof Array) {
+            this.map = map;
+            this.size = Vec2d.createFrom(size);
+            if (this.map[0][0] != undefined) {
+                this.type = "2D";
+                this.dimension = Vec2d.createFrom({
+                    x: this.map[0].length,
+                    y: this.map.length
+                });
+            } else {
+                this.type = "1D";
+                this.dimension = Vec2d.createFrom(dimension);
             }
-            this.delay = delay;
             this.index = new Vec2d();
-            this._delayCounter = 0;
-            this._frameCounter = 0;
-            this.state = false;
+            this.id = null;
+            // view
+            this.minView = new Vec2d();
+            this.maxView = this.dimension;
+        } else {
+            throw TypeError(`Failed to Initialize Map: expects an instance of an Array`);
         }
-
-        /**
-         * @method setFrame
-         * @description sets the current animation's frame
-         * @param {String} frameName animation's frame name
-         */
-        setFrame(frameName) {
-            if(this.frames.hasOwnProperty(frameName)) {
-                if(this.frames[frameName] instanceof Array) {
-                    this.currentFrames = this.frames[frameName];
-                    this.frameName = frameName;
-                } else 
-                    throw TypeError("Sprite's current frame must be an instance of an Array");
-            }
-            else 
-                throw new Error(`Sprite Frame name does not exists`);
-        }
-
-        /**
-         * @method getSource
-         * @description gets the source vectors for the animation. This 
-         * method must be called in a loop for an effective animation
-         */
-        getSource() {
-            this._delayCounter++;
-            if(this._delayCounter > this.delay) {
-                this._delayCounter = 0;
-                this._frameCounter++;
-                if(this._frameCounter >= this.currentFrames.length) {
-                    this.state = false;
-                    this._frameCounter = 0;
-                } else {
-                    this.state = true;
-                }
-                let value = this.currentFrames[this._frameCounter] - 1;
-                let x = value % this.col;
-                let y = value / this.col;
-                this.index = new Vec2d(x, y);
-            }
-        }
-
     }
 
+    /**
+     * @method setView
+     * @description set the minimum and maximum visible area in the tile
+     * @param {Vec2d} min minimum view vector 
+     * @param {Vec2d} max maximum view vector
+     */
+    setView(min, max) {
+        this.minView = Vec2d.createFrom(min);
+        this.maxView = Vec2d.createFrom(max);
+    }
 
-     ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////   
-    /////////////////////////////////// BASIC //////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    static Basic = class {
-
-            constructor(type="rect", pos, dimension) {
-                this.type = type;
-                this.rotation = 0;
-                this.scale = new Vec2d(1, 1);
-                this.velocity = new Vec2d(1, 1);
-                if(type === "rect") {
-                    this.pos = Vec2d.createFrom(pos);
-                    this.dimension = Vec2d.createFrom(dimension);
-                } else if(type === "circle") {
-                    this.pos = Vec2d.createFrom(pos);
-                    this.r = dimension;
-                } else if(type === "polygon") {
-                    this.pos = Vec2d.createFrom(pos);
-                    this.vertices = dimension;
-                } else if(type === "line") {
-                    this.start = Vec2d.createFrom(pos);
-                    this.end = Vec2d.createFrom(dimension);
-                }
+    /**
+     * @method render
+     * @description API for rendering map to the screen
+     * @param {Function} callback callback to render map
+     */
+    render(callback) {
+        for (let r = this.minView.y; r < this.maxView.y; r++) {
+            for (let c = this.minView.x; c < this.maxView.x; c++) {
+                this.index = new Vec2d(c, r);
+                this.id = OrthographicMap.getMapId(this.map, this.index, this.dimension.x);
+                callback();
             }
-
         }
+    }
+
+}
+
+
+class OrthographicCamera {
+    /**
+     * @constructor
+     * @param {Vec3d} camera's position in 3d space
+     * @param {Vec3d} camera's dimension in screen
+     */
+    constructor(pos = new Vec3d(), dimension = new Vec3d()) {
+        this.pos = Vec3d.createFrom(pos);
+        this.dimension = Vec3d.createFrom(dimension);
+        this.minPos = new Vec3d();
+        this.maxPos = new Vec3d();
+
+        this._shakeEnabled = false;
+        this._isShaking = false;
+        this._shakeTimeOut = 0;
+    }
+
+    /**
+     * @method lookAt
+     * @description set the minimum and maximum visible area of the camera
+     * @param {Array} map the map
+     * @param {Vec2d} the size of each tile in the map
+     */
+    lookAt(map, sizee) {
+        let size = Vec3d.createFrom(sizee);
+        size.z = this.pos.z;
+        this.minPos = this.pos.mult(size.inverse()).applyFunc(Math.floor);
+        this.maxPos = this.pos.add(this.dimension).mult(
+            size.inverse()).applyFunc(Math.ceil);
+    }
+
+    /**
+     * @method setMapClamp
+     * @description set the minimum and maximum indexes from the array
+     * @param {Vec2d} minn the minimum indexes on the array
+     * @param {Vec2d} maxx the maximum indexes on the array
+     */
+    setMapClamp(minn, maxx) {
+        let min = Vec3d.createFrom(minn);
+        let max = Vec3d.createFrom(maxx);
+        if (this.minPos.x < min.x)
+            this.minPos.x = min.x;
+        else if (this.maxPos.x > max.x)
+            this.maxPos.x = max.x;
+
+        if (this.minPos.y < min.y)
+            this.minPos.y = min.y;
+        else if (this.maxPos.y > max.y)
+            this.maxPos.y = max.y;
+    }
+
+    /**
+     * @method setMapClamp
+     * @description set the minimum and maximum position in worldspace
+     * @param {Vec2d} minn the minimum position on the canvas
+     * @param {Vec2d} maxx the maximum position on the canvas
+     */
+    setPosClamp(minn, maxx) {
+        let min = Vec3d.createFrom(minn);
+        let max = Vec3d.createFrom(maxx);
+        if (this.pos.x < min.x)
+            this.pos.x = min.x;
+        else if (this.pos.x + this.dimension.x > max.x)
+            this.pos.x = max.x - this.dimension.x;
+
+        if (this.pos.y < min.y)
+            this.pos.y = min.y;
+        else if (this.pos.y + this.dimension.y > max.y)
+            this.pos.y = max.y - this.dimension.y;
+
+        if (this.pos.z < min.z) this.pos.z = min.z;
+        else if (this.pos.z > max.z) this.pos.z = max.z;
+    }
+
+    /**
+     * @method follow
+     * @description determines the center of the camera
+     * @param {Vec2d} poss the positional vector
+     * @param {Vec2d} dimension the dimension of the component
+     */
+    follow(poss, dimensionn) {
+        if (!this._isShaking) {
+            let pos = Vec3d.createFrom(poss);
+            let dimension = Vec3d.createFrom(dimensionn);
+            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5));
+        } else {
+            let pos = Vec3d.createFrom(poss);
+            let dimension = Vec3d.createFrom(dimensionn);
+            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5)).scale(Math.sin(Math.random() * 20) * 1);
+            // this.shake(poss);
+        }
+    }
+
+    shakeEnabled(pos, dimension = new Vec2d()) {
+        this._shakeEnabled = true;
+        this._shakeOrigin = Vec2d.createFrom(pos);
+        this._shakeDimension = Vec2d.createFrom(dimension);
+        this._shakePivot = this._shakeOrigin.add(this._shakeDimension.scale(0.5));
+    }
+
+    shake(origin, duration) {
+        // if(this._shakeTimeOut >= duration) {
+        //  this._isShaking = false;
+        //  this._shakeTimeOut = 0;
+        // } else {
+        //  this._isShaking = true;
+        //  this._shakeTimeOut++;
+        //  let nx = origin.x + Math.sin(Math.random() * 20) * 10;
+        //  let ny = origin.y + Math.sin(Math.random() * 20) * 10;
+        //  this.pos = Vec2d.createFrom([nx, ny]);
+        // }
+        if (this._shakeEnabled) {
+            // let diffPos = Vec2d.createFrom([])
+            // let shakePos = this._shakeOrigin.add()
+            // let p = this.pos.add(this.dimension.scale(0.5));
+            let nx = this._shakePivot.x + Math.sin(Math.random() * 20) * 1;
+            let ny = this._shakePivot.y + Math.sin(Math.random() * 20) * 1;
+            this.pos = Vec2d.createFrom([nx, ny]);
+        } else
+            throw new Error("Cannot shake Camera: Please enabled camera shake by calling it's method")
+    }
 
 }
