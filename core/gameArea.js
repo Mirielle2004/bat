@@ -98,17 +98,13 @@ class GameArea {
             if(this._mirielleScene.state) {
                 // has every assets been loaded ?
                 if(this.config.preload.length !== 0) {
-                    Promise.all(this._preloadScene.promisesArr)
-                    .then(value => {
+                    if(this._preloadScene.state) {
                         clearInterval(mainInterval);
                         this.state = true;
                         this.files.push(this._preloadScene._preloadedFiles);
                         if(typeof this.onReady === "function") this.onReady();
                         appendChildScene();
-                    }).catch(value => {
-                        this._preloadScene.activeScene();
-                        // this.state = false;
-                    });
+                    } else this._preloadScene.activeScene();
                 } else {
                     clearInterval(mainInterval);
                     this.state = true;

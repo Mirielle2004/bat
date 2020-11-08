@@ -1,43 +1,45 @@
 /**
-* @class CreditScene
+* @class preloadScene
 * A class displaying the `Preloading` Screen on 
 * every start of a scene if there's an asset to preload
 */
 class PreloadScene {
 
-	/**
-	* @constructor
-	* @params {HTMLSectionElement} parent of this scene
-	* @param {HTMLCanvasElement} parent canvas of this scene
-	* @param {Number} w width of the scene
-	* @param {Number} h height of the scene
-	*/
-	constructor(parent, w, h, config) {
-		// create the scene
-		this.parent = parent;
-		this._canvas = document.createElement("canvas");
-		this._canvas.width = w;
-		this._canvas.height = h;
-		this._canvas.style.position = "absolute";
-		this.state = false;
-		this.parent.appendChild(this._canvas);
+    /**
+    * @constructor
+    * @params {HTMLSectionElement} parent of this scene
+    * @param {HTMLCanvasElement} parent canvas of this scene
+    * @param {Number} w width of the scene
+    * @param {Number} h height of the scene
+    */
+    constructor(parent, w, h, config) {
+        // create the scene
+        this.parent = parent;
+        this._canvas = document.createElement("canvas");
+        this._canvas.width = w;
+        this._canvas.height = h;
+        this._canvas.style.position = "absolute";
+        this.state = false;
+        this.parent.appendChild(this._canvas);
 
-		// configurations
-		this.config = config;
-		this.ctx = this._canvas.getContext("2d");
+        // configurations
+        this.config = config;
+        this.ctx = this._canvas.getContext("2d");
 
-		// preload
+        // preload
         this.preload = this.config.preload || [];
+        this._preloadedAssetsCounter = 0;
         this._preloadedImages = [];
         this._preloadedAudios = [];
         this._preloadedFiles = [];
         this._preloadAngle = 0;
         this._preloadScale = 5;
+        this._preloadColorIndex = 0;
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
             let audExtensions = [".mp3"];
-            let otherExtensions = ['.json', "other"];
+            let otherExtensions = [".txt"];
 
             // group preload assets 
             if(this.preload instanceof Array) {
@@ -47,12 +49,13 @@ class PreloadScene {
                         && data.type === "img" || data.type === "image")
                         this._preloadedImages.push({img: new Image(), ind:index, ...data});
                     // check for audios
-                    else if(audExtensions.some(i => data.src.endsWith(i)) || data.type !== undefined 
+                    else if(audExtensions.some(i => data.src.endsWith(i)) || data.type !== undefined
                         && data.type === "aud" || data.type === "audio")
                         this._preloadedAudios.push({aud: new Audio(), ind:index, ...data});
-                    // check for files
-                    else if(data.type !== undefined && otherExtensions.some(i => i === data.type)) {
-                        this._preloadedFiles.push({...data});
+                    // check for text files
+                    else if(otherExtensions.some(i => data.src.endsWith(i)) || data.type !== undefined
+                        && data.type === "other" || data.type === "file") {
+                            this._preloadedFiles.push({type:"file", ...data});
                     } else 
                         throw TypeError(`Invalid Media extension for ${data.src}`);
                 });
@@ -60,76 +63,68 @@ class PreloadScene {
                 throw TypeError("Failed to initialize preload: Must be an instanceof of an Array");
         }
 
-	}
-
-	/**
-	* @method startPreload
-	* @description preloads all media files, media files data must be in this format
-	* - {src:String, name:String}
-	* all stored in the configuration's preload array
-	*/
-	start() {
-
-        async function loadImage(data) {
-            let promise = new Promise((resolve, reject) => {
-                data.img.addEventListener("load", () => {
-                    setTimeout(() => resolve(`${data.name} loaded`), 2000);
-                });
-                data.img.addEventListener("error", () => {
-                    reject(`Failed to load the image ${data.img.src}`);
-                });
-            });
-            data.img.src = data.src;
-            return promise;
-        }
-
-        async function loadAudio(data) {
-            let promise = new Promise((resolve, reject) => {
-                data.aud.addEventListener("canplaythrough", () => {
-                    setTimeout(() => resolve(`${data.name} loaded`), 2000);
-                });
-                data.aud.addEventListener("error", () => {
-                    reject(`Failed to load the Audio ${data.data.src}`);
-                });
-            });
-            data.aud.src = data.src;
-            return promise;
-        }
-
-        // {src, type, name, res}
-        async function loadFile(data) {
-            let req = new XMLHttpRequest();
-            let promise = new Promise((resolve, reject) => {
-                req.addEventListener("load", function() {
-                    if(req.status === 200)  {
-                        if(data.type === "json")
-                            data.res = JSON.parse(req.responseText);
-                        else data.res = req.responseText;
-                        resolve({name: data.name, res:data.res, type:"file"});
-                    }
-                });
-                req.addEventListener("error", function() {
-                    reject(`Failed to Load the file ${data.src}`);
-                });
-            });
-            req.open("GET", data.src);
-            req.send();
-            return promise;
-        }
-
-        this.promisesArr = [];
-        this._preloadedImages.forEach((data) => this.promisesArr.push(loadImage(data)));
-        this._preloadedAudios.forEach((data) => this.promisesArr.push(loadAudio(data)));
-        this._preloadedFiles.forEach((data) => this.promisesArr.push(loadFile(data)));
     }
 
     /**
-	* @method activeScene
-	* @description scene shown while preloading
-	*/
-	activeScene() {
-		let W = this._canvas.width;
-		let H = this._canvas.height;
+    * @method startPreload
+    * @description preloads all media files, media files data must be in this format
+    * - {src:String, name:String}
+    * all stored in the configuration's preload array
+    */
+    start() {
+        const loadingFunction = ()  => {
+            if(this._preloadedAssetsCounter === this.config.preload.length) {
+                this.state = true;
+                this.parent.removeChild(this._canvas);
+            }
+        }
+
+        this._preloadedImages.forEach(data => {
+            data.img.addEventListener("load", ()=>{
+                this._preloadedAssetsCounter++;
+                loadingFunction();
+            });
+            data.img.src = data.src;
+        });
+
+        this._preloadedAudios.forEach(data => {
+            data.aud.addEventListener("canplaythrough", ()=>{
+                this._preloadedAssetsCounter++;
+                loadingFunction();
+            });
+            data.aud.src = data.src;
+        });
+
+        const loadFiles = (data, _this) => {
+            let req = new XMLHttpRequest();
+            req.onreadystatechange = function() {
+                if(req.readyState === XMLHttpRequest.DONE) {
+                    if(req.status === 200) {
+                        _this._preloadedAssetsCounter++;
+                        data.res = req.responseText;
+                        loadingFunction();
+                    } else {
+                        console.error("Bad Internet Connection: Failed to get " + url);
+                    }
+                }
+            }
+            req.open("GET", data.src);
+            req.send();
+        }
+
+        this._preloadedFiles.forEach(file => {
+            loadFiles(file, this);
+            // loadingFunction();
+        });
+    }
+
+    /**
+    * @method activeScene
+    * @description scene shown while preloading
+    */
+    activeScene() {
+        let W = this._canvas.width;
+        let H = this._canvas.height;
         if(this.config.mirielle.theme === "dark") this.ctx.fillStyle = "#222";
         else this.ctx.fillStyle = "#fff";
         this.ctx.fillRect(0, 0, W, H);
