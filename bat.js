@@ -1,36 +1,66 @@
+/**
+ * 
+ * @author Mirielle S.
+ * name: Bat.js
+ * Last Revision: 11th Nov. 2020
+ * 
+ * 
+ * MIT License 
+ * Copyright (c) 2020 CodeBreaker
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+
 Object.defineProperties(Math, {
 
-    degToRad: {
-        value:function(number) {
-            return number * this.PI / 180;
-        }
-    },
+	degToRad: {
+		value:function(number) {
+			return number * this.PI / 180;
+		}
+	},
 
-    radToDeg: {
-        value: function(number) {
-            return number * 180 / this.PI;
-        }
-    },
+	radToDeg: {
+		value: function(number) {
+			return number * 180 / this.PI;
+		}
+	},
 
-    isEven: {
-        value: function(number) {
-            return !(number & 1)
-        }
-    },
+	isEven: {
+		value: function(number) {
+			return !(number & 1)
+		}
+	},
 
-    randRange: {
-        value: function(min, max) {
-            return this.random() * (max - min + 1) + min;
-        }
-    },
+	randRange: {
+		value: function(min, max) {
+			return this.random() * (max - min + 1) + min;
+		}
+	},
 
-    clamp: {
-        value: function(min, max, val) {
-            return this.min(this.max(min, +val), max);
-        }
-    }
+	clamp: {
+		value: function(min, max, val) {
+			return this.min(this.max(min, +val), max);
+		}
+	}
 
 });
+
 
 /**
 * @class Vec2d
@@ -937,34 +967,657 @@ class Mat4x4 {
 }
 
 
-Object.defineProperties(HTMLElement.prototype, {
+class BasicComponent {
 
-    css: {
-        value: function(styles) {
-            if(!styles instanceof Object) 
-                throw new Error(`CSS Styling data must be an instanceof an Object`)
-            let res = "";
-            for(const key in styles) {
-                this.style[key] = styles[key];
+	constructor(type, pos, dimension) {
+		this.validTypes = [
+			"rect", 
+			"circle",
+			"line",
+			"polygon"
+		];
+		if(!(this.validTypes.some(i => i === type)))
+			throw TypeError(`Failed to create Component, valid type 
+				must be from ${this.validTypes}`);
+		this.type = type;
+
+		if(this.type === "rect") {
+			this.pos = Vec2d.createFrom(pos);
+			this.dimension = Vec2d.createFrom(dimension);
+		} 
+		else if(this.type === "circle") {
+			this.pos = Vec2d.createFrom(pos);
+			this.r = dimension;
+		} 
+		else if(this.type === "line") {
+			this.start = Vec2d.createFrom(pos);
+			this.end = Vec2d.createFrom(dimension);
+		} 
+		else if(this.type === "polygon") {
+			this.pos = Vec2d.createFrom(pos);
+			this.vertices = [];
+			if(dimension instanceof Array) {
+				if(dimension[0][0] !== undefined) {
+					dimension.forEach(data => {
+						this.vertices.push(Vec2d.createFrom(data));
+					});
+				}
+			}
+		}
+		
+	}
+
+
+}
+
+
+
+class TileComponent {
+    
+        constructor(pos, dimension) {
+            this.pos = Vec2d.createFrom(pos);
+            this.dimension = Vec2d.createFrom(dimension);
+            this.velocity = new Vec2d();
+
+            this.lastPos = null;
+            this.nextPos = null;
+            this.currentPos = null;
+
+            this._minpos = null;
+            this._maxpos = null;
+        }
+
+        orthBoundaryCollision(map, velocity, {left=null, top=null}) {
+            if(!(map instanceof OrthographicMap)) 
+                throw new Error("Map object must be an instanceof OrthographicMap");
+
+            // X - axis
+            this.lastPos = this.pos;    
+            this.nextPos = Vec2d.createFrom({
+                x: this.lastPos.x + velocity.x,
+                y: this.lastPos.y
+            });
+
+            this._minpos = this.nextPos.mult(map.size.inverse()).applyFunc(Math.floor);
+            this._maxpos = this.nextPos.add(this.dimension).mult(
+                map.size.inverse()).applyFunc(Math.ceil);
+
+            for(let r=this._minpos.y; r < this._maxpos.y; r++) {
+                for(let c=this._minpos.x; c < this._maxpos.x; c++) {
+                    this.currentPos = OrthographicMap.getMapId(map, [c, r]);
+                    if(typeof left === "function") left();
+                }
             }
+
+            this.pos = this.nextPos;
+
+            // Y - axis
+            this.lastPos = this.pos;
+            this.nextPos = Vec2d.createFrom({
+                x: this.lastPos.x,
+                y: this.lastPos.y + velocity.y
+            });
+
+            this._minpos = this.nextPos.mult(map.size.inverse()).applyFunc(Math.floor);
+            this._maxpos = this.nextPos.add(this.dimension).mult(
+                map.size.inverse()).applyFunc(Math.ceil);
+
+            for(let r=this._minpos.y; r < this._maxpos.y; r++) {
+                for(let c=this._minpos.x; c < this._maxpos.x; c++) {
+                    this.currentPos = OrthographicMap.getMapId(map, [c, r]);
+                    if(typeof top === "function") top();
+                }
+            }
+
+            this.pos = this.nextPos;
+            // lastPos, nextPos, currentPos;
+
+            //     for(let r=this._minPos.y; r < this._maxPos.y; r++) {
+            //         for(let c=this._minPos.x; c < this._maxPos.x; c++) {
+            //             this.currentPos = map.map[r * map.dimension.x + c];
+            //             if(typeof left === "function")
+            //                 left();
+            //         }
+            //     }
+            //     this.pos = this.nextPos;
+            //     // Y-AXIS
+            //     this.lastPos = this.pos;
+            //     this.nextPos = Vec2d.createFrom({
+            //         x: this.lastPos.x,
+            //         y: this.lastPos.y + this.velocity.y
+            //     });
+            //     this._minPos = this.nextPos.mult(Vec2d.createFrom(map.size).inverse())
+            //         .applyFunc(Math.floor);
+            //     this._maxPos = this.nextPos.add(this.dimension).mult(Vec2d.createFrom
+            //         (map.size).inverse()).applyFunc(Math.ceil);
+
+            //     for(let r=this._minPos.y; r < this._maxPos.y; r++) {
+            //         for(let c=this._minPos.x; c < this._maxPos.x; c++) {
+            //             this.currentPos = map.map[r * map.dimension.x + c];
+            //             if(typeof top === "function")
+            //                 top();
+            //         }
+            //     }
+            //     this.pos = this.nextPos;
+            // }
+            
         }
+    }
+
+
+
+const Component = {
+
+    Basic: function(type, pos, dimension) {
+        return new BasicComponent(type, pos, dimension);
     },
 
-    setCss: {
-        value: function(key, value) {
-            this.styles[key] = value;
-        }
-    },
+    Tile: function(pos, dimension) {
+    	return new TileComponent(pos, dimension);
+    }
 
-    attr: {
-        value: function(attrs) {
-            if(!attrs instanceof Object) 
-                throw new Error(`ATTR data must be an instanceof an Object`)
-            for(const key in attrs) {
-                this[key] = attrs[key];
+}
+
+
+
+class Collision2DDetect {
+
+	/**
+	* @method circle
+	* @checks for collisions between two circles
+	* @param {Any} c1 the first circle
+	* @param {Any} c2 the second circle
+	* circle = {pos: , r:}
+	*/
+	static circle(c1, c2) {
+		let diff = Vec2d.createFrom(c2.pos).sub(Vec2d.createFrom(c1.pos));
+		return diff.length <= c1.r + c2.r;
+	}
+	/**
+	* @method rect
+	* @checks for collisions between two rectangles
+	* @param {Any} r11 the first rectangle
+	* @param {Any} r22 the second rectangle
+	* rect = {pos: , dimension:}
+	*/
+	static rect(r11, r22) {
+		let r1 = Component.Basic("rect", r11.pos, r11.dimension);
+		let r2 = Component.Basic("rect", r22.pos, r22.dimension);
+		return r1.pos.x + r1.dimension.x > r2.pos.x && r2.pos.x + r2.dimension.x > r1.pos.x
+		&& r1.pos.y + r1.dimension.y > r2.pos.y && r2.pos.y + r1.dimension.y > r1.pos.y;
+	}
+	/**
+	* @method circleRect
+	* @checks for collisions between circle and a rectangle
+	* @param {Any} c1 the circle
+	* @param {Any} r1 the rectangle
+	* circle = {pos, r}
+	* rect = {pos: , dimension:}
+	*/
+	static circleRect(c1, r1) {
+		let c = Component.Basic("circle", c1.pos, c1.r);
+		let r = Component.Basic("rect", r1.pos, r1.dimension);
+		let diff = {
+			x: Math.abs(c.pos.x - (r.pos.x + r.dimension.x * 0.5)),
+			y: Math.abs(c.pos.y - (r.pos.y + r.dimension.y * 0.5))
+		};
+		if(diff.x > c.r + r.dimension.x * 0.5) return false;
+		if(diff.y > c.r + r.dimension.y * 0.5) return false;
+		if(diff.x <= r.dimension.x) return true;
+		if(diff.y <= r.dimension.y) return true;
+		let dx = diff.x - r.dimension.x;
+		let dy = diff.y - r.dimension.y;
+		return Math.hypot(dx, dy) <= c.r * c.r;
+	}
+	/**
+	* @method lineIntercept
+	* @checks if two line segment are intercepting
+	* @param {Any} l1 the first line
+	* @param {Any} l2 the second line
+	* line = {start: , end: }
+	*/
+	static lineIntercept(l11, l22) {
+		let l1 = Component.Basic("line", l11.start, l11.end);
+		let l2 = Component.Basic("line", l22.start, l22.end);
+
+		function lineSegmentsIntercept(l1, l2) {
+			let v1 = l1.end.sub(l1.start);
+			let v2 = l2.end.sub(l2.start);
+			let v3 = {x: null, y: null};
+			let cross, u1, u2;
+
+			if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
+				return false;
+			}
+			v3 = l1.start.sub(l2.start);
+			u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
+			if(u2 >= 0 && u2 <= 1) {
+				u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
+				return u1 >= 0 && u1 <= 1;
+			}
+			return false;
+		}
+
+		return lineSegmentsIntercept(l1, l2);
+	}
+	/**
+	* @method pointAtLineIntercept
+	* @checks if two line segment are intercepting
+	* @param {Any} l1 the first line
+	* @param {Any} l2 the second line
+	* line = {start: , end: }
+	*/
+	static pointAtLineIntercept(l11, l22) {
+		let l1 = Component.Basic("line", l11.start, l11.end);
+		let l2 = Component.Basic("line", l22.start, l22.end);
+
+		function lineSegmentsIntercept(l1, l2) {
+			let v1 = l1.end.sub(l1.start);
+			let v2 = l2.end.sub(l2.start);
+			let v3 = {x: null, y: null};
+			let cross, u1, u2;
+
+			if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
+				return false;
+			}
+			v3 = l1.start.sub(l2.start);
+			u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
+			if(u2 >= 0 && u2 <= 1) {
+				u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
+				if(u1 >= 0 && u1 <= 1) {
+					return l1.start.addScale(v1, u1);
+				}
+			}
+			return false;
+		}
+
+		return lineSegmentsIntercept(l1, l2);
+	}
+	/**
+	* @method lineInterceptCircle
+	* @checks if a line intercepts a circle
+	* @param {Any} l1 the line
+	* @param {Any} c1 the circle
+	* line = {start: , end: }
+	* circle = {pos:, r:}
+	*/
+	static lineInterceptCircle(l1, c1) {
+		let l = Component.Basic("line", l1.start, l1.end);
+		let c = Component.Basic("circle", c1.pos, c1.r);
+		let diff = c.pos.sub(l.start);
+		let ndiff = l.end.sub(l.start);
+		let t = diff.dot(ndiff) / (ndiff.x * ndiff.x + ndiff.y * ndiff.y);
+		let nPoint = l.start.addScale(ndiff, t);
+		if(t < 0) {
+			nPoint.x = l.start.x;
+			nPoint.y = l.start.y
+		}
+		if(t > 1) {
+			nPoint.x = l.end.x;
+			nPoint.y = l.end.y	
+		}
+		return (c.pos.x - nPoint.x) * (c.pos.x - nPoint.x) + (c.pos.y - nPoint.y) * (c.pos.y - nPoint.y)
+		< c.r * c.r;
+	}
+	/**
+	* @method lineInterceptRect
+	* @checks if a line intercepts a rectangle
+	* @param {Any} l1 the line
+	* @param {Any} r1 the rectangle
+	* line = {start: , end: }
+	* circle = {pos:, dimension:}
+	*/
+	static lineInterceptRect(l1, r1) {
+		let l = Component.Basic("line", l1.start, l1.end);
+		let r = Component.Basic("rect", r1.pos, r1.dimension);
+
+		function lineSegmentsIntercept(p0, p1, p2, p3) {
+			var unknownA = (p3.x-p2.x) * (p0.y-p2.y) - (p3.y-p2.y) * (p0.x-p2.x);
+			var unknownB = (p1.x-p0.x) * (p0.y-p2.y) - (p1.y-p0.y) * (p0.x-p2.x);
+			var denominator = (p3.y-p2.y) * (p1.x-p0.x) -(p3.x-p2.x) * (p1.y-p0.y);
+
+			if(unknownA==0 && unknownB==0 && denominator==0) return(null);
+			if (denominator == 0) return null;
+
+			unknownA /= denominator;
+			unknownB /= denominator;
+			var isIntersecting=(unknownA>=0 && unknownA<=1 && unknownB>=0 && unknownB<=1)
+			return isIntersecting;
+		}
+
+		let p = {x: l.start.x, y: l.start.y};
+		let p2 = {x: l.end.x, y: l.end.y};
+
+		let q = r.pos;
+		let q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y};
+		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+		q = q2;
+		q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y + r.dimension.y};
+		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+		q = q2;
+		q2 = {x: r.pos.x, y: r.pos.y + r.dimension.y};
+		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+		q = q2;
+		q2 = {x: r.pos.x, y: r.pos.y};
+		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+		return false;
+	}
+	/**
+	* @description checks if the point[x, y] is in an arc
+	* @param {Vec2d} p point to be checked
+	* @param {Object} arc arc data
+	// arc objects: {pos,innerRadius:,outerRadius:,startAngle:,endAngle:}
+	// Return true if the x,y point is inside an arc
+	*/
+	static isPointInArc(p, arc) {
+		if(arc.pos === undefined || arc.innerRadius === undefined || arc.outerRadius 
+		=== undefined || arc.startAngle === undefined || arc.endAngle === undefined)
+			throw new Error(`Insufficient Arc data: Must provide a "pos, innerRadius, outerRadius, startAngle, endAngle"`);
+		let diff = p.sub(Vec2d.createFrom(arc.pos));
+		let rOuter = arc.outerRadius;
+		let rInner = arc.innerRadius;
+		if(diff.length < rInner || diff.length > rOuter) return false;
+		let angle = (diff.angle + Math.PI * 2) % Math.PI*2;
+		return angle >= arc.startAngle && angle <= arc.endAngle;
+	}
+	/**
+	* @description checks if the point[x, y] is in a wedge
+	* @param {Vec2d} p point to be checked
+	* @param {Object} wedge wedge data
+	// wedge objects: {pos:,r:,startAngle:,endAngle:}
+	// Return true if the x,y point is inside the closed wedge
+	*/
+	static isPointInWedge(p, wedge) {
+		if(wedge.pos === undefined || wedge.r === undefined || wedge.startAngle === undefined)
+			throw new Error(`Insufficient Wedge's data: Must provide a "pos, r, startAngle"`);
+		let PI2 = Math.PI * 2;
+		let diff = p.sub(wedge.pos);
+		let r = wedge.r * wedge.r;
+		if(diff.length > r) return false;
+		let angle = (diff.angle + PI2) % PI2;
+		return angle >= wedge.startAngle && angle <= wedge.endAngle;
+	}
+	/**
+	* @description checks if the point[x, y] is in a circle
+	* @param {Vec2d} p point to be checked
+	* @param {Vec2d} c circle component
+	*/
+	static isPointInCircle(p, c) {
+		let diff = p.sub(c.pos);
+		return (diff.length < c.r * c.r);
+	}
+	/**
+	* @description checks if the point[x, y] is in a rect
+	* @param {Vec2d} p point to be checked
+	* @param {Vec2d} c rect component
+	*/
+	static isPointInRect(p, r) {
+		return (p.x > r.pos.x && p.x < r.pos.x + r.dimension.x 
+			&& p.y > r.pos.y && p.y < r.pos.y + r.dimension.y);
+	}
+	
+}
+
+
+const Physics = {
+
+	Collision2D: {
+		Detect: Collision2DDetect,
+		Resolve: Collision2DResolve
+	}
+
+};
+
+
+class OrthographicMap {
+
+    static getMapId(map, pos) {
+        let p = Vec2d.createFrom(pos);
+        if (map.type === "2D") {
+            if(map.dataType === "number")
+                return map.map[p.y][p.x];
+            else if(map.dataType === "string")
+                return map.map[p.y][0][p.x];
+        } else if(map.type === "1D"){
+            if(map.dataType === "number")
+                return map.map[p.y * map.dimension.x + p.x];
+            else if(map.dataType === "string"){
+                return map.map[0][p.y * map.dimension.x + p.x];
             }
         }
     }
+
+    static getTileSetIndex(pos, col) {
+        let v = Vec2d.createFrom(pos);
+        return new Vec2d(v.x % col, v.y / col);
+    }
+    /**
+     * @constructor
+     * @param {Array} map map data
+     * @param {Vec2d} size size of each tiles in the map
+     */
+    constructor(map, size, dimension) {
+        if (map instanceof Array) {
+            this.map = map;
+            this.size = Vec2d.createFrom(size);
+            this.dataType = null;
+            // 2D Array
+            if (this.map[0][0] != undefined) {
+                this.type = "2D";
+                if(typeof this.map[0][0] === "string") {
+                    this.dataType = "string";
+                    this.dimension = Vec2d.createFrom({
+                        x: this.map[0][0].length,
+                        y: this.map.length
+                    });
+                } else {
+                    this.dataType = "number";
+                    this.dimension = Vec2d.createFrom({
+                        x: this.map[0].length,
+                        y: this.map.length
+                    });
+                }
+            } else {
+                this.type = "1D";
+                this.dimension = Vec2d.createFrom(dimension);
+                if(typeof this.map[0] === "string") this.dataType = "string";
+                else this.dataType = "number";
+            }
+            this.index = new Vec2d();
+            this.id = null;
+            // view
+            this.minView = new Vec2d();
+            this.maxView = this.dimension;
+        } else {
+            throw TypeError(`Failed to Initialize Map: expects an instance of an Array`);
+        }
+    }
+
+    /**
+     * @method setView
+     * @description set the minimum and maximum visible area in the tile
+     * @param {Vec2d} min minimum view vector 
+     * @param {Vec2d} max maximum view vector
+     */
+    setView(min, max) {
+        this.minView = Vec2d.createFrom(min);
+        this.maxView = Vec2d.createFrom(max);
+    }
+
+    /**
+     * @method render
+     * @description API for rendering map to the screen
+     * @param {Function} callback callback to render map
+     */
+    render(callback) {
+        for (let r = this.minView.y; r < this.maxView.y; r++) {
+            for (let c = this.minView.x; c < this.maxView.x; c++) {
+                this.index = new Vec2d(c, r);
+                this.id = OrthographicMap.getMapId(this, this.index);
+                callback();
+            }
+        }
+    }
+
+    getID(pos) {
+        let p = Vec2d.createFrom(pos);
+        if (this.type === "2D") {
+            if(this.dataType === "number")
+                return this.map[p.y][p.x];
+            else if(this.dataType === "string")
+                return this.map[p.y][0][p.x];
+        } else if(this.type === "1D"){
+            if(this.dataType === "number")
+                return this.map[p.y * this.dimension.x + p.x];
+            else if(this.dataType === "string"){
+                return this.map[0][p.y * this.dimension.x + p.x];
+            }
+        }
+    }
+
+}
+
+
+class OrthographicCamera {
+    /**
+     * @constructor
+     * @param {Vec3d} camera's position in 3d space
+     * @param {Vec3d} camera's dimension in screen
+     */
+    constructor(pos = new Vec3d(), dimension = new Vec3d()) {
+        this.pos = Vec3d.createFrom(pos);
+        this.dimension = Vec3d.createFrom(dimension);
+        this.minPos = new Vec3d();
+        this.maxPos = new Vec3d();
+
+        this._isShaking = false;
+    }
+
+    /**
+     * @method lookAt
+     * @description set the minimum and maximum visible area of the camera
+     * @param {Array} map the map
+     * @param {Vec2d} the size of each tile in the map
+     */
+    lookAt(map, sizee) {
+        let size = Vec3d.createFrom(sizee);
+        this.pos.z = size.z;
+        this.minPos = this.pos.mult(size.inverse()).applyFunc(Math.floor);
+        this.maxPos = this.pos.add(this.dimension).mult(
+            size.inverse()).applyFunc(Math.ceil);
+    }
+
+    /**
+     * @method setMapClamp
+     * @description set the minimum and maximum indexes from the array
+     * @param {Vec2d} minn the minimum indexes on the array
+     * @param {Vec2d} maxx the maximum indexes on the array
+     */
+    setMapClamp(minn, maxx) {
+        let min = Vec3d.createFrom(minn);
+        let max = Vec3d.createFrom(maxx);
+        if (this.minPos.x < min.x)
+            this.minPos.x = min.x;
+        else if (this.maxPos.x > max.x)
+            this.maxPos.x = max.x;
+
+        if (this.minPos.y < min.y)
+            this.minPos.y = min.y;
+        else if (this.maxPos.y > max.y)
+            this.maxPos.y = max.y;
+    }
+
+    /**
+     * @method setMapClamp
+     * @description set the minimum and maximum position in worldspace
+     * @param {Vec2d} minn the minimum position on the canvas
+     * @param {Vec2d} maxx the maximum position on the canvas
+     */
+    setPosClamp(minn, maxx) {
+        let min = Vec3d.createFrom(minn);
+        let max = Vec3d.createFrom(maxx);
+        if (this.pos.x < min.x)
+            this.pos.x = min.x;
+        else if (this.pos.x + this.dimension.x > max.x)
+            this.pos.x = max.x - this.dimension.x;
+
+        if (this.pos.y < min.y)
+            this.pos.y = min.y;
+        else if (this.pos.y + this.dimension.y > max.y)
+            this.pos.y = max.y - this.dimension.y;
+
+        if (this.pos.z < min.z) this.pos.z = min.z;
+        else if (this.pos.z > max.z) this.pos.z = max.z;
+    }
+
+    /**
+     * @method follow
+     * @description determines the center of the camera
+     * @param {Vec2d} poss the positional vector
+     * @param {Vec2d} dimension the dimension of the component
+     */
+    follow(poss, dimensionn) {
+        if (!this._isShaking) {
+            let pos = Vec3d.createFrom(poss);
+            let dimension = Vec3d.createFrom(dimensionn);
+            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5));
+        }
+    }
+
+    shakeStart(range) {
+        this._isShaking = true;
+        let oldPos = new Vec2d(this.pos.x, this.pos.y);
+        this.pos.x = oldPos.x + Math.sin(Math.random() * 10) * range;
+        this.pos.y = oldPos.y + Math.cos(Math.random() * 10) * range;
+    }
+
+    shakeEnd() {
+        this._isShaking = false;
+    }
+}
+
+
+const Tile = {
+
+	Map: {
+		Orthographic: OrthographicMap
+	},
+
+	Camera: {
+		Orthographic: OrthographicCamera	
+	}
+
+}
+
+
+Object.defineProperties(HTMLElement.prototype, {
+
+	css: {
+		value: function(styles) {
+			if(!styles instanceof Object) 
+				throw new Error(`CSS Styling data must be an instanceof an Object`)
+			let res = "";
+			for(const key in styles) {
+				this.style[key] = styles[key];
+			}
+		}
+	},
+
+	setCss: {
+		value: function(key, value) {
+			this.styles[key] = value;
+		}
+	},
+
+	attr: {
+		value: function(attrs) {
+			if(!attrs instanceof Object) 
+				throw new Error(`ATTR data must be an instanceof an Object`)
+			for(const key in attrs) {
+				this[key] = attrs[key];
+			}
+		}
+	}
 
 });
 
@@ -980,31 +1633,20 @@ Object.defineProperties(HTMLElement.prototype, {
 *
 */
 
-/**
-* Principal class for scene rendering
-* 
-* CONFIG
-* .mirielle        | styling for the mirielle canvas
-* .css           | css stylings for the scene
-* .attr          | html attributes of the scene
-* .dynamic       | determine wether RAF should be enabled
-*
-*/
-
 class GameArea {
-    /**
-    * @constructor
-    * @param {Number} w width of the scene
-    * @param {Number} h height of the scene
-    * @param {Object | String} config configuration data of the scene
-    */
-    constructor(w, h, config) {
+	/**
+	* @constructor
+	* @param {Number} w width of the scene
+	* @param {Number} h height of the scene
+	* @param {Object | String} config configuration data of the scene
+	*/
+	constructor(w, h, config) {
         this.w = w || 300;
         this.h = h || 300;
         this.config = config;
         this.state = false;
-        // game section
-        this.section = document.createElement("section");
+		// game section
+		this.section = document.createElement("section");
         this.section.style.margin = "0";
         this.state = false;
 
@@ -1021,7 +1663,7 @@ class GameArea {
         this.files = [];
         this._preloadScene.start();
         document.body.appendChild(this.section);
-    }
+	}
 
     getArea() {
         return this.section;
@@ -1068,7 +1710,7 @@ class GameArea {
                     if(scene.dynamic) {
                         requestAnimationFrame(scene.animate());
                     } else {
-                        if(typeof this.update === "function")
+                        if(typeof scene.update === "function")
                             scene.update();
                         else console.error(`Scene does not have a valid update method`);
                     }
@@ -1090,6 +1732,7 @@ class GameArea {
                 } else {
                     clearInterval(mainInterval);
                     this.state = true;
+                    if(typeof this.onReady === "function") this.onReady();
                     appendChildScene();
                 }
             }
@@ -1110,8 +1753,9 @@ class GameArea {
     getHeight() {
         return this.h;
     }
-        
+		
 };
+
 
 /**
 * @class CreditScene
@@ -1120,86 +1764,80 @@ class GameArea {
 */
 class MirielleScene {
 
-    /**
-    * @constructor
-    * @params {HTMLSectionElement} parent of this scene
-    * @param {Number} w width of the scene
-    * @param {Number} h height of the scene
-    */
-    constructor(parent, w, h, config) {
-        // create the scene
-        this._parent = parent;
-        this._canvas = document.createElement("canvas");
-        this._canvas.width = w;
-        this._canvas.height = h;
-        this._canvas.style.position = "absolute";
-        this.state = false;
-        this._parent.appendChild(this._canvas);
+	/**
+	* @constructor
+	* @params {HTMLSectionElement} parent of this scene
+	* @param {Number} w width of the scene
+	* @param {Number} h height of the scene
+	*/
+	constructor(parent, w, h, config) {
+		// create the scene
+		this._parent = parent;
+		this._canvas = document.createElement("canvas");
+		this._canvas.width = w;
+		this._canvas.height = h;
+		this._canvas.style.position = "absolute";
+		this.state = false;
+		this._parent.appendChild(this._canvas);
 
-        // configurations
-        this.config = config;
-        this.ctx = this._canvas.getContext("2d");
+		// configurations
+		this.config = config;
+		this.ctx = this._canvas.getContext("2d");
 
-        let styles = {
-            duration: 5, //Math.max(5, config.duration || 5),
-            fontSize: Math.max(35, config.fontSize) || 35,
-            fontFamily: Math.max(35, config.fontFamily) || "Verdana"
-        };
+		let styles = {
+			duration: Math.max(5, config.duration || 5),
+			fontSize: Math.max(35, config.fontSize) || 35,
+			fontFamily: Math.max(35, config.fontFamily) || "Verdana"
+		};
 
-        // set themes
-        if(this.config.theme === "dark")
-            this._canvas.style.backgroundColor = "#222";
-        else if (this.config.theme === "light")
-            this._canvas.style.backgroundColor = "#fff";
-        else this.config.theme = "light";
+		// set themes
+		if(this.config.theme === "dark")
+			this._canvas.style.backgroundColor = "#222";
+		else if (this.config.theme === "light")
+			this._canvas.style.backgroundColor = "#fff";
+		else this.config.theme = "light";
 
-        // draw logo
-        this.ctx.beginPath();
-        this.ctx.moveTo(w/2, h/2 - 20);
-        for(let i=0; i <= 360; i+=60) {
-            let angle = i * Math.PI / 180;
-            let radius = styles.fontSize * 3;
-            let x = w/2 + Math.cos(angle) * radius;
-            let y = (h/2 - 20) + Math.sin(angle) * radius;
-            this.ctx.lineTo(x, y);
-        }
-        this.ctx.fillStyle = this.config.theme === "light" ? "dimgray" : "#333";
-        this.ctx.fill();
+		// draw logo
+		this.ctx.beginPath();
+		this.ctx.moveTo(w/2, h/2 - 20);
+		for(let i=0; i <= 360; i+=60) {
+			let angle = i * Math.PI / 180;
+			let radius = styles.fontSize * 3;
+			let x = w/2 + Math.cos(angle) * radius;
+			let y = (h/2 - 20) + Math.sin(angle) * radius;
+			this.ctx.lineTo(x, y);
+		}
+		this.ctx.fillStyle = this.config.theme === "light" ? "dimgray" : "#333";
+		this.ctx.fill();
 
-        // bat text
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "middle";
-        this.ctx.font = `bold ${styles.fontSize}px ${styles.fontFamily}`;
-        this.ctx.fillStyle = this.config.theme === "light" ? "#fff" : "dimgray";
-        this.ctx.fillText("Bat Games", w/2, h/2 - 20);
+		// bat text
+		this.ctx.textAlign = "center";
+		this.ctx.textBaseline = "middle";
+		this.ctx.font = `bold ${styles.fontSize}px ${styles.fontFamily}`;
+		this.ctx.fillStyle = this.config.theme === "light" ? "#fff" : "dimgray";
+		this.ctx.fillText("Bat Games", w/2, h/2 - 20);
 
-        // bat description
-        this.ctx.font = `bold ${styles.fontSize - (styles.fontSize-10)}px ${styles.fontFamily}`;
-        this.ctx.fillStyle = "red";
-        this.ctx.fillText("Games API for web developers on a GO", w/2, h/2 + 20);
+		// bat description
+		this.ctx.font = `bold ${styles.fontSize - (styles.fontSize-10)}px ${styles.fontFamily}`;
+		this.ctx.fillStyle = "red";
+		this.ctx.fillText("Games API for web developers on a GO", w/2, h/2 + 20);
 
-        // copyright
-        this.ctx.font = `bold 10px ${styles.fontFamily}`;
-        this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#fff";
-        this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 50);
+		// copyright
+		this.ctx.font = `bold 10px ${styles.fontFamily}`;
+		this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#fff";
+		this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 50);
 
-        // hide this scene after timeout of the specified style's duration
-        let timer = setTimeout(() => {
-            clearTimeout(timer);
-            this._parent.removeChild(this._canvas);
-            this.state = true;
-        }, styles.duration * 1000);
-    }
+		// hide this scene after timeout of the specified style's duration
+		let timer = setTimeout(() => {
+			clearTimeout(timer);
+			this._parent.removeChild(this._canvas);
+			this.state = true;
+		}, styles.duration * 1000);
+	}
 
 }
 
 
-
-/**
-* @class CreditScene
-* A class displaying the `Preloading` Screen on 
-* every start of a scene if there's an asset to preload
-*/
 /**
 * @class preloadScene
 * A class displaying the `Preloading` Screen on 
@@ -1237,6 +1875,7 @@ class PreloadScene {
         this._preloadAngle = 0;
         this._preloadScale = 5;
         this._preloadColorIndex = 0;
+        this._currentLoadingFile = "";
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
@@ -1282,6 +1921,7 @@ class PreloadScene {
         }
 
         this._preloadedImages.forEach(data => {
+            this._currentLoadingFile = data.name;
             data.img.addEventListener("load", ()=>{
                 this._preloadedAssetsCounter++;
                 loadingFunction();
@@ -1290,6 +1930,7 @@ class PreloadScene {
         });
 
         this._preloadedAudios.forEach(data => {
+            this._currentLoadingFile = data.name;
             data.aud.addEventListener("canplaythrough", ()=>{
                 this._preloadedAssetsCounter++;
                 loadingFunction();
@@ -1298,6 +1939,7 @@ class PreloadScene {
         });
 
         const loadFiles = (data, _this) => {
+            this._currentLoadingFile = data.name;
             let req = new XMLHttpRequest();
             req.onreadystatechange = function() {
                 if(req.readyState === XMLHttpRequest.DONE) {
@@ -1306,7 +1948,7 @@ class PreloadScene {
                         data.res = req.responseText;
                         loadingFunction();
                     } else {
-                        console.error("Bad Internet Connection: Failed to get " + url);
+                        console.error("Bad Internet Connection: Failed to get " + data.src);
                     }
                 }
             }
@@ -1316,7 +1958,6 @@ class PreloadScene {
 
         this._preloadedFiles.forEach(file => {
             loadFiles(file, this);
-            // loadingFunction();
         });
     }
 
@@ -1349,6 +1990,13 @@ class PreloadScene {
             }
         }
         this.ctx.restore();
+
+        this.ctx.font = "bold 13px Verdana";
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillStyle = this.config.mirielle.theme === "dark" ? "lightgray" : "#222";
+        this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
+        this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);
     }
 
 }
@@ -1431,7 +2079,6 @@ class Scene {
 }
 
 
-
 // handle cross-platform animation's frame function
 window.requestAnimationFrame = (function() {
     return window.requestAnimationFrame || 
@@ -1482,202 +2129,6 @@ const Bat = {
             return word;
         }
 
-    }
-
-}
-
-
-
-class OrthographicMap {
-    static getMapId(map, pos, size = 0) {
-        let p = Vec2d.createFrom(pos);
-        if (map[0][0] !== undefined)
-            return map[p.y][p.x];
-        return map[p.y * size + p.x];
-    }
-
-    static getTileSetIndex(pos, col) {
-        let v = Vec2d.createFrom(pos);
-        return new Vec2d(v.x % col, v.y / col);
-    }
-    /**
-     * @constructor
-     * @param {Array} map map data
-     * @param {Vec2d} size size of each tiles in the map
-     */
-    constructor(map, size, dimension) {
-        if (map instanceof Array) {
-            this.map = map;
-            this.size = Vec2d.createFrom(size);
-            if (this.map[0][0] != undefined) {
-                this.type = "2D";
-                this.dimension = Vec2d.createFrom({
-                    x: this.map[0].length,
-                    y: this.map.length
-                });
-            } else {
-                this.type = "1D";
-                this.dimension = Vec2d.createFrom(dimension);
-            }
-            this.index = new Vec2d();
-            this.id = null;
-            // view
-            this.minView = new Vec2d();
-            this.maxView = this.dimension;
-        } else {
-            throw TypeError(`Failed to Initialize Map: expects an instance of an Array`);
-        }
-    }
-
-    /**
-     * @method setView
-     * @description set the minimum and maximum visible area in the tile
-     * @param {Vec2d} min minimum view vector 
-     * @param {Vec2d} max maximum view vector
-     */
-    setView(min, max) {
-        this.minView = Vec2d.createFrom(min);
-        this.maxView = Vec2d.createFrom(max);
-    }
-
-    /**
-     * @method render
-     * @description API for rendering map to the screen
-     * @param {Function} callback callback to render map
-     */
-    render(callback) {
-        for (let r = this.minView.y; r < this.maxView.y; r++) {
-            for (let c = this.minView.x; c < this.maxView.x; c++) {
-                this.index = new Vec2d(c, r);
-                this.id = OrthographicMap.getMapId(this.map, this.index, this.dimension.x);
-                callback();
-            }
-        }
-    }
-
-}
-
-
-class OrthographicCamera {
-    /**
-     * @constructor
-     * @param {Vec3d} camera's position in 3d space
-     * @param {Vec3d} camera's dimension in screen
-     */
-    constructor(pos = new Vec3d(), dimension = new Vec3d()) {
-        this.pos = Vec3d.createFrom(pos);
-        this.dimension = Vec3d.createFrom(dimension);
-        this.minPos = new Vec3d();
-        this.maxPos = new Vec3d();
-
-        this._shakeEnabled = false;
-        this._isShaking = false;
-        this._shakeTimeOut = 0;
-    }
-
-    /**
-     * @method lookAt
-     * @description set the minimum and maximum visible area of the camera
-     * @param {Array} map the map
-     * @param {Vec2d} the size of each tile in the map
-     */
-    lookAt(map, sizee) {
-        let size = Vec3d.createFrom(sizee);
-        size.z = this.pos.z;
-        this.minPos = this.pos.mult(size.inverse()).applyFunc(Math.floor);
-        this.maxPos = this.pos.add(this.dimension).mult(
-            size.inverse()).applyFunc(Math.ceil);
-    }
-
-    /**
-     * @method setMapClamp
-     * @description set the minimum and maximum indexes from the array
-     * @param {Vec2d} minn the minimum indexes on the array
-     * @param {Vec2d} maxx the maximum indexes on the array
-     */
-    setMapClamp(minn, maxx) {
-        let min = Vec3d.createFrom(minn);
-        let max = Vec3d.createFrom(maxx);
-        if (this.minPos.x < min.x)
-            this.minPos.x = min.x;
-        else if (this.maxPos.x > max.x)
-            this.maxPos.x = max.x;
-
-        if (this.minPos.y < min.y)
-            this.minPos.y = min.y;
-        else if (this.maxPos.y > max.y)
-            this.maxPos.y = max.y;
-    }
-
-    /**
-     * @method setMapClamp
-     * @description set the minimum and maximum position in worldspace
-     * @param {Vec2d} minn the minimum position on the canvas
-     * @param {Vec2d} maxx the maximum position on the canvas
-     */
-    setPosClamp(minn, maxx) {
-        let min = Vec3d.createFrom(minn);
-        let max = Vec3d.createFrom(maxx);
-        if (this.pos.x < min.x)
-            this.pos.x = min.x;
-        else if (this.pos.x + this.dimension.x > max.x)
-            this.pos.x = max.x - this.dimension.x;
-
-        if (this.pos.y < min.y)
-            this.pos.y = min.y;
-        else if (this.pos.y + this.dimension.y > max.y)
-            this.pos.y = max.y - this.dimension.y;
-
-        if (this.pos.z < min.z) this.pos.z = min.z;
-        else if (this.pos.z > max.z) this.pos.z = max.z;
-    }
-
-    /**
-     * @method follow
-     * @description determines the center of the camera
-     * @param {Vec2d} poss the positional vector
-     * @param {Vec2d} dimension the dimension of the component
-     */
-    follow(poss, dimensionn) {
-        if (!this._isShaking) {
-            let pos = Vec3d.createFrom(poss);
-            let dimension = Vec3d.createFrom(dimensionn);
-            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5));
-        } else {
-            let pos = Vec3d.createFrom(poss);
-            let dimension = Vec3d.createFrom(dimensionn);
-            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5)).scale(Math.sin(Math.random() * 20) * 1);
-            // this.shake(poss);
-        }
-    }
-
-    shakeEnabled(pos, dimension = new Vec2d()) {
-        this._shakeEnabled = true;
-        this._shakeOrigin = Vec2d.createFrom(pos);
-        this._shakeDimension = Vec2d.createFrom(dimension);
-        this._shakePivot = this._shakeOrigin.add(this._shakeDimension.scale(0.5));
-    }
-
-    shake(origin, duration) {
-        // if(this._shakeTimeOut >= duration) {
-        //  this._isShaking = false;
-        //  this._shakeTimeOut = 0;
-        // } else {
-        //  this._isShaking = true;
-        //  this._shakeTimeOut++;
-        //  let nx = origin.x + Math.sin(Math.random() * 20) * 10;
-        //  let ny = origin.y + Math.sin(Math.random() * 20) * 10;
-        //  this.pos = Vec2d.createFrom([nx, ny]);
-        // }
-        if (this._shakeEnabled) {
-            // let diffPos = Vec2d.createFrom([])
-            // let shakePos = this._shakeOrigin.add()
-            // let p = this.pos.add(this.dimension.scale(0.5));
-            let nx = this._shakePivot.x + Math.sin(Math.random() * 20) * 1;
-            let ny = this._shakePivot.y + Math.sin(Math.random() * 20) * 1;
-            this.pos = Vec2d.createFrom([nx, ny]);
-        } else
-            throw new Error("Cannot shake Camera: Please enabled camera shake by calling it's method")
     }
 
 }

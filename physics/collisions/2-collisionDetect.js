@@ -21,7 +21,7 @@ class Collision2DDetect {
 	static rect(r11, r22) {
 		let r1 = Component.Basic("rect", r11.pos, r11.dimension);
 		let r2 = Component.Basic("rect", r22.pos, r22.dimension);
-		return r1.pos.x + r1.dimension.x > r2.pos.x && r2.pos.x + r2.dimension.x > r2.pos.x
+		return r1.pos.x + r1.dimension.x > r2.pos.x && r2.pos.x + r2.dimension.x > r1.pos.x
 		&& r1.pos.y + r1.dimension.y > r2.pos.y && r2.pos.y + r1.dimension.y > r1.pos.y;
 	}
 	/**
@@ -233,5 +233,10 @@ class Collision2DDetect {
 		return (p.x > r.pos.x && p.x < r.pos.x + r.dimension.x 
 			&& p.y > r.pos.y && p.y < r.pos.y + r.dimension.y);
 	}
+	
+}
+
+
+class Collision2DResolve {
 	
 }
