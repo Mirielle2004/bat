@@ -35,6 +35,7 @@ class PreloadScene {
         this._preloadAngle = 0;
         this._preloadScale = 5;
         this._preloadColorIndex = 0;
+        this._currentLoadingFile = "";
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
@@ -80,6 +81,7 @@ class PreloadScene {
         }
 
         this._preloadedImages.forEach(data => {
+            this._currentLoadingFile = data.name;
             data.img.addEventListener("load", ()=>{
                 this._preloadedAssetsCounter++;
                 loadingFunction();
@@ -88,6 +90,7 @@ class PreloadScene {
         });
 
         this._preloadedAudios.forEach(data => {
+            this._currentLoadingFile = data.name;
             data.aud.addEventListener("canplaythrough", ()=>{
                 this._preloadedAssetsCounter++;
                 loadingFunction();
@@ -96,6 +99,7 @@ class PreloadScene {
         });
 
         const loadFiles = (data, _this) => {
+            this._currentLoadingFile = data.name;
             let req = new XMLHttpRequest();
             req.onreadystatechange = function() {
                 if(req.readyState === XMLHttpRequest.DONE) {
@@ -104,7 +108,7 @@ class PreloadScene {
                         data.res = req.responseText;
                         loadingFunction();
                     } else {
-                        console.error("Bad Internet Connection: Failed to get " + url);
+                        console.error("Bad Internet Connection: Failed to get " + data.src);
                     }
                 }
             }
@@ -114,7 +118,6 @@ class PreloadScene {
 
         this._preloadedFiles.forEach(file => {
             loadFiles(file, this);
-            // loadingFunction();
         });
     }
 
@@ -147,6 +150,13 @@ class PreloadScene {
             }
         }
         this.ctx.restore();
+
+        this.ctx.font = "bold 13px Verdana";
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillStyle = this.config.mirielle.theme === "dark" ? "lightgray" : "#222";
+        this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
+        this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);
     }
 
 }

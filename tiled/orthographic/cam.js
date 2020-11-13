@@ -10,9 +10,7 @@ class OrthographicCamera {
         this.minPos = new Vec3d();
         this.maxPos = new Vec3d();
 
-        this._shakeEnabled = false;
         this._isShaking = false;
-        this._shakeTimeOut = 0;
     }
 
     /**
@@ -23,7 +21,7 @@ class OrthographicCamera {
      */
     lookAt(map, sizee) {
         let size = Vec3d.createFrom(sizee);
-        size.z = this.pos.z;
+        this.pos.z = size.z;
         this.minPos = this.pos.mult(size.inverse()).applyFunc(Math.floor);
         this.maxPos = this.pos.add(this.dimension).mult(
             size.inverse()).applyFunc(Math.ceil);
@@ -83,41 +81,17 @@ class OrthographicCamera {
             let pos = Vec3d.createFrom(poss);
             let dimension = Vec3d.createFrom(dimensionn);
             this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5));
-        } else {
-            let pos = Vec3d.createFrom(poss);
-            let dimension = Vec3d.createFrom(dimensionn);
-            this.pos = pos.add(dimension.scale(0.5)).sub(this.dimension.scale(0.5)).scale(Math.sin(Math.random() * 20) * 1);
-            // this.shake(poss);
         }
     }
 
-    shakeEnabled(pos, dimension = new Vec2d()) {
-        this._shakeEnabled = true;
-        this._shakeOrigin = Vec2d.createFrom(pos);
-        this._shakeDimension = Vec2d.createFrom(dimension);
-        this._shakePivot = this._shakeOrigin.add(this._shakeDimension.scale(0.5));
+    shakeStart(range) {
+        this._isShaking = true;
+        let oldPos = new Vec2d(this.pos.x, this.pos.y);
+        this.pos.x = oldPos.x + Math.sin(Math.random() * 10) * range;
+        this.pos.y = oldPos.y + Math.cos(Math.random() * 10) * range;
     }
 
-    shake(origin, duration) {
-        // if(this._shakeTimeOut >= duration) {
-        // 	this._isShaking = false;
-        // 	this._shakeTimeOut = 0;
-        // } else {
-        // 	this._isShaking = true;
-        // 	this._shakeTimeOut++;
-        // 	let nx = origin.x + Math.sin(Math.random() * 20) * 10;
-        // 	let ny = origin.y + Math.sin(Math.random() * 20) * 10;
-        // 	this.pos = Vec2d.createFrom([nx, ny]);
-        // }
-        if (this._shakeEnabled) {
-            // let diffPos = Vec2d.createFrom([])
-            // let shakePos = this._shakeOrigin.add()
-            // let p = this.pos.add(this.dimension.scale(0.5));
-            let nx = this._shakePivot.x + Math.sin(Math.random() * 20) * 1;
-            let ny = this._shakePivot.y + Math.sin(Math.random() * 20) * 1;
-            this.pos = Vec2d.createFrom([nx, ny]);
-        } else
-            throw new Error("Cannot shake Camera: Please enabled camera shake by calling it's method")
+    shakeEnd() {
+        this._isShaking = false;
     }
-
 }

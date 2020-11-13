@@ -1,9 +1,19 @@
 class OrthographicMap {
-    static getMapId(map, pos, size = 0) {
+
+    static getMapId(map, pos) {
         let p = Vec2d.createFrom(pos);
-        if (map[0][0] !== undefined)
-            return map[p.y][p.x];
-        return map[p.y * size + p.x];
+        if (map.type === "2D") {
+            if(map.dataType === "number")
+                return map.map[p.y][p.x];
+            else if(map.dataType === "string")
+                return map.map[p.y][0][p.x];
+        } else if(map.type === "1D"){
+            if(map.dataType === "number")
+                return map.map[p.y * map.dimension.x + p.x];
+            else if(map.dataType === "string"){
+                return map.map[0][p.y * map.dimension.x + p.x];
+            }
+        }
     }
 
     static getTileSetIndex(pos, col) {
@@ -19,15 +29,28 @@ class OrthographicMap {
         if (map instanceof Array) {
             this.map = map;
             this.size = Vec2d.createFrom(size);
+            this.dataType = null;
+            // 2D Array
             if (this.map[0][0] != undefined) {
                 this.type = "2D";
-                this.dimension = Vec2d.createFrom({
-                    x: this.map[0].length,
-                    y: this.map.length
-                });
+                if(typeof this.map[0][0] === "string") {
+                    this.dataType = "string";
+                    this.dimension = Vec2d.createFrom({
+                        x: this.map[0][0].length,
+                        y: this.map.length
+                    });
+                } else {
+                    this.dataType = "number";
+                    this.dimension = Vec2d.createFrom({
+                        x: this.map[0].length,
+                        y: this.map.length
+                    });
+                }
             } else {
                 this.type = "1D";
                 this.dimension = Vec2d.createFrom(dimension);
+                if(typeof this.map[0] === "string") this.dataType = "string";
+                else this.dataType = "number";
             }
             this.index = new Vec2d();
             this.id = null;
@@ -59,8 +82,24 @@ class OrthographicMap {
         for (let r = this.minView.y; r < this.maxView.y; r++) {
             for (let c = this.minView.x; c < this.maxView.x; c++) {
                 this.index = new Vec2d(c, r);
-                this.id = OrthographicMap.getMapId(this.map, this.index, this.dimension.x);
+                this.id = OrthographicMap.getMapId(this, this.index);
                 callback();
+            }
+        }
+    }
+
+    getID(pos) {
+        let p = Vec2d.createFrom(pos);
+        if (this.type === "2D") {
+            if(this.dataType === "number")
+                return this.map[p.y][p.x];
+            else if(this.dataType === "string")
+                return this.map[p.y][0][p.x];
+        } else if(this.type === "1D"){
+            if(this.dataType === "number")
+                return this.map[p.y * this.dimension.x + p.x];
+            else if(this.dataType === "string"){
+                return this.map[0][p.y * this.dimension.x + p.x];
             }
         }
     }

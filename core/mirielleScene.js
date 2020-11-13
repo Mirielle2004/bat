@@ -26,7 +26,7 @@ class MirielleScene {
 		this.ctx = this._canvas.getContext("2d");
 
 		let styles = {
-			duration: 5, //Math.max(5, config.duration || 5),
+			duration: 0, //Math.max(5, config.duration || 5),
 			fontSize: Math.max(35, config.fontSize) || 35,
 			fontFamily: Math.max(35, config.fontFamily) || "Verdana"
 		};

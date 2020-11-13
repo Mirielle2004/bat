@@ -86,7 +86,7 @@ class GameArea {
                     if(scene.dynamic) {
                         requestAnimationFrame(scene.animate());
                     } else {
-                        if(typeof this.update === "function")
+                        if(typeof scene.update === "function")
                             scene.update();
                         else console.error(`Scene does not have a valid update method`);
                     }
@@ -108,6 +108,7 @@ class GameArea {
                 } else {
                     clearInterval(mainInterval);
                     this.state = true;
+                    if(typeof this.onReady === "function") this.onReady();
                     appendChildScene();
                 }
             }

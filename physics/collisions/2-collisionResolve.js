@@ -1,0 +1,3 @@
+class Collision2DResolve {
+	
+}
