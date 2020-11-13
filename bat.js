@@ -1362,8 +1362,7 @@ class Collision2DDetect {
 const Physics = {
 
 	Collision2D: {
-		Detect: Collision2DDetect,
-		Resolve: Collision2DResolve
+		Detect: Collision2DDetect
 	}
 
 };
