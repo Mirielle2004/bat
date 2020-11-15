@@ -56,6 +56,14 @@ class Scene {
         return this._canvas.getContext("2d");
     }
 
+    setWidth(w) {
+        this._canvas.width = w;
+    }
+
+    setHeight(h) {
+        this._canvas.height = h;
+    }
+
     getWidth() {
         return this._canvas.width;
     }

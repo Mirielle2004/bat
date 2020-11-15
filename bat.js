@@ -1,8 +1,9 @@
 /**
+ * @class Vec2d
  * 
  * @author Mirielle S.
  * name: Bat.js
- * Last Revision: 11th Nov. 2020
+ * Last Revision: 24th oct. 2020
  * 
  * 
  * MIT License 
@@ -29,35 +30,35 @@
 
 Object.defineProperties(Math, {
 
-	degToRad: {
-		value:function(number) {
-			return number * this.PI / 180;
-		}
-	},
+    degToRad: {
+        value:function(number) {
+            return number * this.PI / 180;
+        }
+    },
 
-	radToDeg: {
-		value: function(number) {
-			return number * 180 / this.PI;
-		}
-	},
+    radToDeg: {
+        value: function(number) {
+            return number * 180 / this.PI;
+        }
+    },
 
-	isEven: {
-		value: function(number) {
-			return !(number & 1)
-		}
-	},
+    isEven: {
+        value: function(number) {
+            return !(number & 1)
+        }
+    },
 
-	randRange: {
-		value: function(min, max) {
-			return this.random() * (max - min + 1) + min;
-		}
-	},
+    randRange: {
+        value: function(min, max) {
+            return this.random() * (max - min + 1) + min;
+        }
+    },
 
-	clamp: {
-		value: function(min, max, val) {
-			return this.min(this.max(min, +val), max);
-		}
-	}
+    clamp: {
+        value: function(min, max, val) {
+            return this.min(this.max(min, +val), max);
+        }
+    }
 
 });
 
@@ -313,7 +314,7 @@ class Vec2d {
         ctx.fill();
         ctx.restore();
     }
-}
+};
 
 
 /**
@@ -555,6 +556,7 @@ class Vec3d {
         ctx.restore();
     }
 }
+
 
 
 /**
@@ -967,45 +969,46 @@ class Mat4x4 {
 }
 
 
+
 class BasicComponent {
 
-	constructor(type, pos, dimension) {
-		this.validTypes = [
-			"rect", 
-			"circle",
-			"line",
-			"polygon"
-		];
-		if(!(this.validTypes.some(i => i === type)))
-			throw TypeError(`Failed to create Component, valid type 
-				must be from ${this.validTypes}`);
-		this.type = type;
+    constructor(type, pos, dimension) {
+        this.validTypes = [
+            "rect", 
+            "circle",
+            "line",
+            "polygon"
+        ];
+        if(!(this.validTypes.some(i => i === type)))
+            throw TypeError(`Failed to create Component, valid type 
+                must be from ${this.validTypes}`);
+        this.type = type;
 
-		if(this.type === "rect") {
-			this.pos = Vec2d.createFrom(pos);
-			this.dimension = Vec2d.createFrom(dimension);
-		} 
-		else if(this.type === "circle") {
-			this.pos = Vec2d.createFrom(pos);
-			this.r = dimension;
-		} 
-		else if(this.type === "line") {
-			this.start = Vec2d.createFrom(pos);
-			this.end = Vec2d.createFrom(dimension);
-		} 
-		else if(this.type === "polygon") {
-			this.pos = Vec2d.createFrom(pos);
-			this.vertices = [];
-			if(dimension instanceof Array) {
-				if(dimension[0][0] !== undefined) {
-					dimension.forEach(data => {
-						this.vertices.push(Vec2d.createFrom(data));
-					});
-				}
-			}
-		}
-		
-	}
+        if(this.type === "rect") {
+            this.pos = Vec2d.createFrom(pos);
+            this.dimension = Vec2d.createFrom(dimension);
+        } 
+        else if(this.type === "circle") {
+            this.pos = Vec2d.createFrom(pos);
+            this.r = dimension;
+        } 
+        else if(this.type === "line") {
+            this.start = Vec2d.createFrom(pos);
+            this.end = Vec2d.createFrom(dimension);
+        } 
+        else if(this.type === "polygon") {
+            this.pos = Vec2d.createFrom(pos);
+            this.vertices = [];
+            if(dimension instanceof Array) {
+                if(dimension[0][0] !== undefined) {
+                    dimension.forEach(data => {
+                        this.vertices.push(Vec2d.createFrom(data));
+                    });
+                }
+            }
+        }
+        
+    }
 
 
 }
@@ -1019,37 +1022,41 @@ class TileComponent {
             this.dimension = Vec2d.createFrom(dimension);
             this.velocity = new Vec2d();
 
+            this.collisionTile = null;
+
             this.lastPos = null;
             this.nextPos = null;
             this.currentPos = null;
 
             this._minpos = null;
             this._maxpos = null;
+            this._pCollRect = null;
         }
-
-        orthBoundaryCollision(map, velocity, {left=null, top=null}) {
-            if(!(map instanceof OrthographicMap)) 
-                throw new Error("Map object must be an instanceof OrthographicMap");
-
+        
+        collisionCheck(sizee, velocity, {left=null, top=null}) {
+            let size = Vec2d.createFrom(sizee);
             // X - axis
-            this.lastPos = this.pos;    
+            this.lastPos = this.pos;
             this.nextPos = Vec2d.createFrom({
                 x: this.lastPos.x + velocity.x,
                 y: this.lastPos.y
             });
 
-            this._minpos = this.nextPos.mult(map.size.inverse()).applyFunc(Math.floor);
-            this._maxpos = this.nextPos.add(this.dimension).mult(
-                map.size.inverse()).applyFunc(Math.ceil);
+            this._pCollRect = new Component.Tile([this.nextPos.x + this.collisionTile.pos.x, 
+                this.nextPos.y + this.collisionTile.pos.y], this.collisionTile.dimension);
+
+            this._minpos = this._pCollRect.pos.mult(size.inverse()).applyFunc(Math.floor);
+            this._maxpos = this._pCollRect.pos.add(this.collisionTile.dimension).mult(
+                size.inverse()).applyFunc(Math.ceil);
 
             for(let r=this._minpos.y; r < this._maxpos.y; r++) {
                 for(let c=this._minpos.x; c < this._maxpos.x; c++) {
-                    this.currentPos = OrthographicMap.getMapId(map, [c, r]);
+                    this.index = new Vec2d(c, r);
                     if(typeof left === "function") left();
                 }
             }
 
-            this.pos = this.nextPos;
+            this.pos.x = this.nextPos.x;
 
             // Y - axis
             this.lastPos = this.pos;
@@ -1058,19 +1065,40 @@ class TileComponent {
                 y: this.lastPos.y + velocity.y
             });
 
-            this._minpos = this.nextPos.mult(map.size.inverse()).applyFunc(Math.floor);
-            this._maxpos = this.nextPos.add(this.dimension).mult(
-                map.size.inverse()).applyFunc(Math.ceil);
+            this._pCollRect = new Component.Tile([this.nextPos.x + this.collisionTile.pos.x, 
+                this.nextPos.y + this.collisionTile.pos.y], this.collisionTile.dimension);
+
+            this._minpos = this._pCollRect.pos.mult(size.inverse()).applyFunc(Math.floor);
+            this._maxpos = this._pCollRect.pos.add(this.collisionTile.dimension).mult(
+                size.inverse()).applyFunc(Math.ceil);
 
             for(let r=this._minpos.y; r < this._maxpos.y; r++) {
                 for(let c=this._minpos.x; c < this._maxpos.x; c++) {
-                    this.currentPos = OrthographicMap.getMapId(map, [c, r]);
+                    this.index = new Vec2d(c, r);
                     if(typeof top === "function") top();
                 }
             }
 
-            this.pos = this.nextPos;
-            // lastPos, nextPos, currentPos;
+            this.pos.y = this.nextPos.y;
+            // this.lastPos = this.collisionTile.pos;
+
+            // this.nextPos = Vec2d.createFrom({
+            //     x: this.lastPos.x,
+            //     y: this.lastPos.y + velocity.y
+            // });
+
+            // this._minpos = this.nextPos.mult(size.inverse()).applyFunc(Math.floor);
+            // this._maxpos = this.nextPos.add(this.dimension).mult(
+            //     size.inverse()).applyFunc(Math.ceil);
+
+            // for(let r=this._minpos.y; r < this._maxpos.y; r++) {
+            //     for(let c=this._minpos.x; c < this._maxpos.x; c++) {
+            //         this.index = new Vec2d(c, r);
+            //         if(typeof top === "function") top();
+            //     }
+            // }
+
+            // this.pos.y = this.nextPos.y;
 
             //     for(let r=this._minPos.y; r < this._maxPos.y; r++) {
             //         for(let c=this._minPos.x; c < this._maxPos.x; c++) {
@@ -1106,6 +1134,78 @@ class TileComponent {
 
 
 
+class SpriteComponent {
+        /**
+         * @constructor
+         * @param {Object} frames object contain animation frames data array
+         * @param {Number} col number of columns in the spritesheet
+         * @param {Number} delay animation delay
+        */
+        constructor(frames, col, delay=5) {
+            this.col = col;
+            this.frames = frames;
+            this.currentFrames = [];
+            this.frameName = null;
+            for(const i in this.frames) {
+                this.setFrame(i);
+                break;
+            }
+            this.delay = delay;
+            this.index = new Vec2d();
+            this._delayCounter = 0;
+            this._frameCounter = 0;
+            this.done = false;
+            this.paused = false;
+        }
+
+        /**
+         * @method setFrame
+         * @description sets the current animation's frame
+         * @param {String} frameName animation's frame name
+         */
+        setFrame(frameName) {
+            if(this.frames.hasOwnProperty(frameName)) {
+                if(this.frames[frameName] instanceof Array) {
+                    this.currentFrames = this.frames[frameName];
+                    this.frameName = frameName;
+                } else 
+                    throw TypeError("Sprite's current frame must be an instance of an Array");
+            }
+            else 
+                throw new Error(`Sprite Frame name does not exists`);
+        }
+
+        /**
+         * @method getSource
+         * @description gets the source vectors for the animation. This 
+         * method must be called in a loop for an effective animation
+         */
+        animateFrame() {
+            if(!this.paused) {
+                this._delayCounter++;
+                if(this._delayCounter > this.delay) {
+                    this._delayCounter = 0;
+                    this._frameCounter++;
+                    if(this._frameCounter >= this.currentFrames.length) {
+                        this.done = false;
+                        this._frameCounter = 0;
+                    } else {
+                        this.done = true;
+                    }
+                    let value = this.currentFrames[this._frameCounter] - 1;
+                    let x = value % this.col;
+                    let y = value / this.col;
+                    this.index = new Vec2d(~~x, ~~y);
+                }    
+            } else {
+                let value = this.currentFrames[0];
+                this.index = new Vec2d(~~(value % this.col), ~~(value / this.col));
+            }
+            
+        }
+}
+
+
 const Component = {
 
     Basic: function(type, pos, dimension) {
@@ -1113,7 +1213,11 @@ const Component = {
     },
 
     Tile: function(pos, dimension) {
-    	return new TileComponent(pos, dimension);
+        return new TileComponent(pos, dimension);
+    },
+
+    Sprite: function(frames, cols, delay=5) {
+        return new SpriteComponent(frames, cols, delay);
     }
 
 }
@@ -1122,273 +1226,304 @@ const Component = {
 
 class Collision2DDetect {
 
-	/**
-	* @method circle
-	* @checks for collisions between two circles
-	* @param {Any} c1 the first circle
-	* @param {Any} c2 the second circle
-	* circle = {pos: , r:}
-	*/
-	static circle(c1, c2) {
-		let diff = Vec2d.createFrom(c2.pos).sub(Vec2d.createFrom(c1.pos));
-		return diff.length <= c1.r + c2.r;
-	}
-	/**
-	* @method rect
-	* @checks for collisions between two rectangles
-	* @param {Any} r11 the first rectangle
-	* @param {Any} r22 the second rectangle
-	* rect = {pos: , dimension:}
-	*/
-	static rect(r11, r22) {
-		let r1 = Component.Basic("rect", r11.pos, r11.dimension);
-		let r2 = Component.Basic("rect", r22.pos, r22.dimension);
-		return r1.pos.x + r1.dimension.x > r2.pos.x && r2.pos.x + r2.dimension.x > r1.pos.x
-		&& r1.pos.y + r1.dimension.y > r2.pos.y && r2.pos.y + r1.dimension.y > r1.pos.y;
-	}
-	/**
-	* @method circleRect
-	* @checks for collisions between circle and a rectangle
-	* @param {Any} c1 the circle
-	* @param {Any} r1 the rectangle
-	* circle = {pos, r}
-	* rect = {pos: , dimension:}
-	*/
-	static circleRect(c1, r1) {
-		let c = Component.Basic("circle", c1.pos, c1.r);
-		let r = Component.Basic("rect", r1.pos, r1.dimension);
-		let diff = {
-			x: Math.abs(c.pos.x - (r.pos.x + r.dimension.x * 0.5)),
-			y: Math.abs(c.pos.y - (r.pos.y + r.dimension.y * 0.5))
-		};
-		if(diff.x > c.r + r.dimension.x * 0.5) return false;
-		if(diff.y > c.r + r.dimension.y * 0.5) return false;
-		if(diff.x <= r.dimension.x) return true;
-		if(diff.y <= r.dimension.y) return true;
-		let dx = diff.x - r.dimension.x;
-		let dy = diff.y - r.dimension.y;
-		return Math.hypot(dx, dy) <= c.r * c.r;
-	}
-	/**
-	* @method lineIntercept
-	* @checks if two line segment are intercepting
-	* @param {Any} l1 the first line
-	* @param {Any} l2 the second line
-	* line = {start: , end: }
-	*/
-	static lineIntercept(l11, l22) {
-		let l1 = Component.Basic("line", l11.start, l11.end);
-		let l2 = Component.Basic("line", l22.start, l22.end);
+    /**
+    * @method circle
+    * @checks for collisions between two circles
+    * @param {Any} c1 the first circle
+    * @param {Any} c2 the second circle
+    * circle = {pos: , r:}
+    */
+    static circle(c1, c2) {
+        let diff = Vec2d.createFrom(c2.pos).sub(Vec2d.createFrom(c1.pos));
+        return diff.length <= c1.r + c2.r;
+    }
+    /**
+    * @method rect
+    * @checks for collisions between two rectangles
+    * @param {Any} r11 the first rectangle
+    * @param {Any} r22 the second rectangle
+    * rect = {pos: , dimension:}
+    */
+    static rect(r11, r22) {
+        let r1 = Component.Basic("rect", r11.pos, r11.dimension);
+        let r2 = Component.Basic("rect", r22.pos, r22.dimension);
+        return r1.pos.x + r1.dimension.x > r2.pos.x && r2.pos.x + r2.dimension.x > r1.pos.x
+        && r1.pos.y + r1.dimension.y > r2.pos.y && r2.pos.y + r1.dimension.y > r1.pos.y;
+    }
+    /**
+    * @method circleRect
+    * @checks for collisions between circle and a rectangle
+    * @param {Any} c1 the circle
+    * @param {Any} r1 the rectangle
+    * circle = {pos, r}
+    * rect = {pos: , dimension:}
+    */
+    static circleRect(c1, r1) {
+        let c = Component.Basic("circle", c1.pos, c1.r);
+        let r = Component.Basic("rect", r1.pos, r1.dimension);
+        let diff = {
+            x: Math.abs(c.pos.x - (r.pos.x + r.dimension.x * 0.5)),
+            y: Math.abs(c.pos.y - (r.pos.y + r.dimension.y * 0.5))
+        };
+        if(diff.x > c.r + r.dimension.x * 0.5) return false;
+        if(diff.y > c.r + r.dimension.y * 0.5) return false;
+        if(diff.x <= r.dimension.x) return true;
+        if(diff.y <= r.dimension.y) return true;
+        let dx = diff.x - r.dimension.x;
+        let dy = diff.y - r.dimension.y;
+        return Math.hypot(dx, dy) <= c.r * c.r;
+    }
+    /**
+    * @method lineIntercept
+    * @checks if two line segment are intercepting
+    * @param {Any} l1 the first line
+    * @param {Any} l2 the second line
+    * line = {start: , end: }
+    */
+    static lineIntercept(l11, l22) {
+        let l1 = Component.Basic("line", l11.start, l11.end);
+        let l2 = Component.Basic("line", l22.start, l22.end);
 
-		function lineSegmentsIntercept(l1, l2) {
-			let v1 = l1.end.sub(l1.start);
-			let v2 = l2.end.sub(l2.start);
-			let v3 = {x: null, y: null};
-			let cross, u1, u2;
+        function lineSegmentsIntercept(l1, l2) {
+            let v1 = l1.end.sub(l1.start);
+            let v2 = l2.end.sub(l2.start);
+            let v3 = {x: null, y: null};
+            let cross, u1, u2;
 
-			if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
-				return false;
-			}
-			v3 = l1.start.sub(l2.start);
-			u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
-			if(u2 >= 0 && u2 <= 1) {
-				u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
-				return u1 >= 0 && u1 <= 1;
-			}
-			return false;
-		}
+            if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
+                return false;
+            }
+            v3 = l1.start.sub(l2.start);
+            u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
+            if(u2 >= 0 && u2 <= 1) {
+                u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
+                return u1 >= 0 && u1 <= 1;
+            }
+            return false;
+        }
 
-		return lineSegmentsIntercept(l1, l2);
-	}
-	/**
-	* @method pointAtLineIntercept
-	* @checks if two line segment are intercepting
-	* @param {Any} l1 the first line
-	* @param {Any} l2 the second line
-	* line = {start: , end: }
-	*/
-	static pointAtLineIntercept(l11, l22) {
-		let l1 = Component.Basic("line", l11.start, l11.end);
-		let l2 = Component.Basic("line", l22.start, l22.end);
+        return lineSegmentsIntercept(l1, l2);
+    }
+    /**
+    * @method pointAtLineIntercept
+    * @checks if two line segment are intercepting
+    * @param {Any} l1 the first line
+    * @param {Any} l2 the second line
+    * line = {start: , end: }
+    */
+    static pointAtLineIntercept(l11, l22) {
+        let l1 = Component.Basic("line", l11.start, l11.end);
+        let l2 = Component.Basic("line", l22.start, l22.end);
 
-		function lineSegmentsIntercept(l1, l2) {
-			let v1 = l1.end.sub(l1.start);
-			let v2 = l2.end.sub(l2.start);
-			let v3 = {x: null, y: null};
-			let cross, u1, u2;
+        function lineSegmentsIntercept(l1, l2) {
+            let v1 = l1.end.sub(l1.start);
+            let v2 = l2.end.sub(l2.start);
+            let v3 = {x: null, y: null};
+            let cross, u1, u2;
 
-			if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
-				return false;
-			}
-			v3 = l1.start.sub(l2.start);
-			u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
-			if(u2 >= 0 && u2 <= 1) {
-				u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
-				if(u1 >= 0 && u1 <= 1) {
-					return l1.start.addScale(v1, u1);
-				}
-			}
-			return false;
-		}
+            if((cross = v1.x * v2.y - v1.y * v2.x) === 0) {
+                return false;
+            }
+            v3 = l1.start.sub(l2.start);
+            u2 = (v1.x * v3.y - v1.y * v3.x) / cross;
+            if(u2 >= 0 && u2 <= 1) {
+                u1 = (v2.x * v3.y - v2.y * v3.x) / cross;
+                if(u1 >= 0 && u1 <= 1) {
+                    return l1.start.addScale(v1, u1);
+                }
+            }
+            return false;
+        }
 
-		return lineSegmentsIntercept(l1, l2);
-	}
-	/**
-	* @method lineInterceptCircle
-	* @checks if a line intercepts a circle
-	* @param {Any} l1 the line
-	* @param {Any} c1 the circle
-	* line = {start: , end: }
-	* circle = {pos:, r:}
-	*/
-	static lineInterceptCircle(l1, c1) {
-		let l = Component.Basic("line", l1.start, l1.end);
-		let c = Component.Basic("circle", c1.pos, c1.r);
-		let diff = c.pos.sub(l.start);
-		let ndiff = l.end.sub(l.start);
-		let t = diff.dot(ndiff) / (ndiff.x * ndiff.x + ndiff.y * ndiff.y);
-		let nPoint = l.start.addScale(ndiff, t);
-		if(t < 0) {
-			nPoint.x = l.start.x;
-			nPoint.y = l.start.y
-		}
-		if(t > 1) {
-			nPoint.x = l.end.x;
-			nPoint.y = l.end.y	
-		}
-		return (c.pos.x - nPoint.x) * (c.pos.x - nPoint.x) + (c.pos.y - nPoint.y) * (c.pos.y - nPoint.y)
-		< c.r * c.r;
-	}
-	/**
-	* @method lineInterceptRect
-	* @checks if a line intercepts a rectangle
-	* @param {Any} l1 the line
-	* @param {Any} r1 the rectangle
-	* line = {start: , end: }
-	* circle = {pos:, dimension:}
-	*/
-	static lineInterceptRect(l1, r1) {
-		let l = Component.Basic("line", l1.start, l1.end);
-		let r = Component.Basic("rect", r1.pos, r1.dimension);
+        return lineSegmentsIntercept(l1, l2);
+    }
+    /**
+    * @method lineInterceptCircle
+    * @checks if a line intercepts a circle
+    * @param {Any} l1 the line
+    * @param {Any} c1 the circle
+    * line = {start: , end: }
+    * circle = {pos:, r:}
+    */
+    static lineInterceptCircle(l1, c1) {
+        let l = Component.Basic("line", l1.start, l1.end);
+        let c = Component.Basic("circle", c1.pos, c1.r);
+        let diff = c.pos.sub(l.start);
+        let ndiff = l.end.sub(l.start);
+        let t = diff.dot(ndiff) / (ndiff.x * ndiff.x + ndiff.y * ndiff.y);
+        let nPoint = l.start.addScale(ndiff, t);
+        if(t < 0) {
+            nPoint.x = l.start.x;
+            nPoint.y = l.start.y
+        }
+        if(t > 1) {
+            nPoint.x = l.end.x;
+            nPoint.y = l.end.y  
+        }
+        return (c.pos.x - nPoint.x) * (c.pos.x - nPoint.x) + (c.pos.y - nPoint.y) * (c.pos.y - nPoint.y)
+        < c.r * c.r;
+    }
+    /**
+    * @method lineInterceptRect
+    * @checks if a line intercepts a rectangle
+    * @param {Any} l1 the line
+    * @param {Any} r1 the rectangle
+    * line = {start: , end: }
+    * circle = {pos:, dimension:}
+    */
+    static lineInterceptRect(l1, r1) {
+        let l = Component.Basic("line", l1.start, l1.end);
+        let r = Component.Basic("rect", r1.pos, r1.dimension);
 
-		function lineSegmentsIntercept(p0, p1, p2, p3) {
-			var unknownA = (p3.x-p2.x) * (p0.y-p2.y) - (p3.y-p2.y) * (p0.x-p2.x);
-			var unknownB = (p1.x-p0.x) * (p0.y-p2.y) - (p1.y-p0.y) * (p0.x-p2.x);
-			var denominator = (p3.y-p2.y) * (p1.x-p0.x) -(p3.x-p2.x) * (p1.y-p0.y);
+        function lineSegmentsIntercept(p0, p1, p2, p3) {
+            var unknownA = (p3.x-p2.x) * (p0.y-p2.y) - (p3.y-p2.y) * (p0.x-p2.x);
+            var unknownB = (p1.x-p0.x) * (p0.y-p2.y) - (p1.y-p0.y) * (p0.x-p2.x);
+            var denominator = (p3.y-p2.y) * (p1.x-p0.x) -(p3.x-p2.x) * (p1.y-p0.y);
 
-			if(unknownA==0 && unknownB==0 && denominator==0) return(null);
-			if (denominator == 0) return null;
+            if(unknownA==0 && unknownB==0 && denominator==0) return(null);
+            if (denominator == 0) return null;
 
-			unknownA /= denominator;
-			unknownB /= denominator;
-			var isIntersecting=(unknownA>=0 && unknownA<=1 && unknownB>=0 && unknownB<=1)
-			return isIntersecting;
-		}
+            unknownA /= denominator;
+            unknownB /= denominator;
+            var isIntersecting=(unknownA>=0 && unknownA<=1 && unknownB>=0 && unknownB<=1)
+            return isIntersecting;
+        }
 
-		let p = {x: l.start.x, y: l.start.y};
-		let p2 = {x: l.end.x, y: l.end.y};
+        let p = {x: l.start.x, y: l.start.y};
+        let p2 = {x: l.end.x, y: l.end.y};
 
-		let q = r.pos;
-		let q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y};
-		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
-		q = q2;
-		q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y + r.dimension.y};
-		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
-		q = q2;
-		q2 = {x: r.pos.x, y: r.pos.y + r.dimension.y};
-		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
-		q = q2;
-		q2 = {x: r.pos.x, y: r.pos.y};
-		if(lineSegmentsIntercept(p, p2, q, q2)) return true;
-		return false;
-	}
-	/**
-	* @description checks if the point[x, y] is in an arc
-	* @param {Vec2d} p point to be checked
-	* @param {Object} arc arc data
-	// arc objects: {pos,innerRadius:,outerRadius:,startAngle:,endAngle:}
-	// Return true if the x,y point is inside an arc
-	*/
-	static isPointInArc(p, arc) {
-		if(arc.pos === undefined || arc.innerRadius === undefined || arc.outerRadius 
-		=== undefined || arc.startAngle === undefined || arc.endAngle === undefined)
-			throw new Error(`Insufficient Arc data: Must provide a "pos, innerRadius, outerRadius, startAngle, endAngle"`);
-		let diff = p.sub(Vec2d.createFrom(arc.pos));
-		let rOuter = arc.outerRadius;
-		let rInner = arc.innerRadius;
-		if(diff.length < rInner || diff.length > rOuter) return false;
-		let angle = (diff.angle + Math.PI * 2) % Math.PI*2;
-		return angle >= arc.startAngle && angle <= arc.endAngle;
-	}
-	/**
-	* @description checks if the point[x, y] is in a wedge
-	* @param {Vec2d} p point to be checked
-	* @param {Object} wedge wedge data
-	// wedge objects: {pos:,r:,startAngle:,endAngle:}
-	// Return true if the x,y point is inside the closed wedge
-	*/
-	static isPointInWedge(p, wedge) {
-		if(wedge.pos === undefined || wedge.r === undefined || wedge.startAngle === undefined)
-			throw new Error(`Insufficient Wedge's data: Must provide a "pos, r, startAngle"`);
-		let PI2 = Math.PI * 2;
-		let diff = p.sub(wedge.pos);
-		let r = wedge.r * wedge.r;
-		if(diff.length > r) return false;
-		let angle = (diff.angle + PI2) % PI2;
-		return angle >= wedge.startAngle && angle <= wedge.endAngle;
-	}
-	/**
-	* @description checks if the point[x, y] is in a circle
-	* @param {Vec2d} p point to be checked
-	* @param {Vec2d} c circle component
-	*/
-	static isPointInCircle(p, c) {
-		let diff = p.sub(c.pos);
-		return (diff.length < c.r * c.r);
-	}
-	/**
-	* @description checks if the point[x, y] is in a rect
-	* @param {Vec2d} p point to be checked
-	* @param {Vec2d} c rect component
-	*/
-	static isPointInRect(p, r) {
-		return (p.x > r.pos.x && p.x < r.pos.x + r.dimension.x 
-			&& p.y > r.pos.y && p.y < r.pos.y + r.dimension.y);
-	}
-	
+        let q = r.pos;
+        let q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y};
+        if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+        q = q2;
+        q2 = {x: r.pos.x + r.dimension.x, y: r.pos.y + r.dimension.y};
+        if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+        q = q2;
+        q2 = {x: r.pos.x, y: r.pos.y + r.dimension.y};
+        if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+        q = q2;
+        q2 = {x: r.pos.x, y: r.pos.y};
+        if(lineSegmentsIntercept(p, p2, q, q2)) return true;
+        return false;
+    }
+    /**
+    * @description checks if the point[x, y] is in an arc
+    * @param {Vec2d} p point to be checked
+    * @param {Object} arc arc data
+    // arc objects: {pos,innerRadius:,outerRadius:,startAngle:,endAngle:}
+    // Return true if the x,y point is inside an arc
+    */
+    static isPointInArc(p, arc) {
+        if(arc.pos === undefined || arc.innerRadius === undefined || arc.outerRadius 
+        === undefined || arc.startAngle === undefined || arc.endAngle === undefined)
+            throw new Error(`Insufficient Arc data: Must provide a "pos, innerRadius, outerRadius, startAngle, endAngle"`);
+        let diff = p.sub(Vec2d.createFrom(arc.pos));
+        let rOuter = arc.outerRadius;
+        let rInner = arc.innerRadius;
+        if(diff.length < rInner || diff.length > rOuter) return false;
+        let angle = (diff.angle + Math.PI * 2) % Math.PI*2;
+        return angle >= arc.startAngle && angle <= arc.endAngle;
+    }
+    /**
+    * @description checks if the point[x, y] is in a wedge
+    * @param {Vec2d} p point to be checked
+    * @param {Object} wedge wedge data
+    // wedge objects: {pos:,r:,startAngle:,endAngle:}
+    // Return true if the x,y point is inside the closed wedge
+    */
+    static isPointInWedge(p, wedge) {
+        if(wedge.pos === undefined || wedge.r === undefined || wedge.startAngle === undefined)
+            throw new Error(`Insufficient Wedge's data: Must provide a "pos, r, startAngle"`);
+        let PI2 = Math.PI * 2;
+        let diff = p.sub(wedge.pos);
+        let r = wedge.r * wedge.r;
+        if(diff.length > r) return false;
+        let angle = (diff.angle + PI2) % PI2;
+        return angle >= wedge.startAngle && angle <= wedge.endAngle;
+    }
+    /**
+    * @description checks if the point[x, y] is in a circle
+    * @param {Vec2d} p point to be checked
+    * @param {Vec2d} c circle component
+    */
+    static isPointInCircle(p, c) {
+        let diff = p.sub(c.pos);
+        return (diff.length < c.r * c.r);
+    }
+    /**
+    * @description checks if the point[x, y] is in a rect
+    * @param {Vec2d} p point to be checked
+    * @param {Vec2d} c rect component
+    */
+    static isPointInRect(p, r) {
+        return (p.x > r.pos.x && p.x < r.pos.x + r.dimension.x 
+            && p.y > r.pos.y && p.y < r.pos.y + r.dimension.y);
+    }
+    
 }
 
 
 const Physics = {
 
-	Collision2D: {
-		Detect: Collision2DDetect
-	}
+    Collision2D: {
+        Detect: Collision2DDetect,
+    }
 
 };
 
 
-class OrthographicMap {
 
-    static getMapId(map, pos) {
-        let p = Vec2d.createFrom(pos);
-        if (map.type === "2D") {
-            if(map.dataType === "number")
-                return map.map[p.y][p.x];
-            else if(map.dataType === "string")
-                return map.map[p.y][0][p.x];
-        } else if(map.type === "1D"){
-            if(map.dataType === "number")
-                return map.map[p.y * map.dimension.x + p.x];
-            else if(map.dataType === "string"){
-                return map.map[0][p.y * map.dimension.x + p.x];
-            }
+class OrthographicMap {
+    /**
+    * @method checkType
+    * @description check the type of an array
+    * @param {array} the array
+    * returns {String}
+    */
+    static checkType(array) {
+        if(array[0][0] !== undefined)
+            return "2D";
+        return "1D";
+    }
+
+    /**
+    * @method getId
+    * @description get the value from an array using the index
+    * @param {array} the array
+    * @param {pos} the index as a vector
+    * @param {dimensionX} (for 1D array) the number of columns
+    * returns {Number}
+    */
+    static getId(array, poss, dimensionX) {
+        let pos = Vec2d.createFrom(poss);
+        if(OrthographicMap.checkType(array) === "2D") {
+            return array[pos.y][pos.x];
+        } else if(OrthographicMap.checkType(array) === "1D") {
+            return array[pos.y * dimensionX + pos.x];
         }
     }
 
-    static getTileSetIndex(pos, col) {
-        let v = Vec2d.createFrom(pos);
-        return new Vec2d(v.x % col, v.y / col);
+    static setId(array, poss, dimensionX, value) {
+        let pos = Vec2d.createFrom(poss);
+        array[pos.y * dimensionX + pos.x] = value;
+    }
+
+    /**
+    * @method indexAt
+    * @description get the index from an array using the position
+    * @param {pos} the postion as a vector
+    * @param {size} size of each tile in the map as a vector
+    * returns {Number}
+    */
+    static indexAt(pos, size) {
+        let newPos = Vec2d.createFrom(pos);
+        let newSize = Vec2d.createFrom(size);
+        return new Vec2d(~~(newPos.x / newSize.x), ~~(newPos.y / newSize.y));
+    }
+
+
+    static getTileSetIndex(value, col) {
+        return new Vec2d(~~(value % col), ~~(value / col));
     }
     /**
      * @constructor
@@ -1452,29 +1587,22 @@ class OrthographicMap {
         for (let r = this.minView.y; r < this.maxView.y; r++) {
             for (let c = this.minView.x; c < this.maxView.x; c++) {
                 this.index = new Vec2d(c, r);
-                this.id = OrthographicMap.getMapId(this, this.index);
+                this.id = this.getId(this.index);
                 callback();
             }
         }
     }
 
-    getID(pos) {
-        let p = Vec2d.createFrom(pos);
-        if (this.type === "2D") {
-            if(this.dataType === "number")
-                return this.map[p.y][p.x];
-            else if(this.dataType === "string")
-                return this.map[p.y][0][p.x];
-        } else if(this.type === "1D"){
-            if(this.dataType === "number")
-                return this.map[p.y * this.dimension.x + p.x];
-            else if(this.dataType === "string"){
-                return this.map[0][p.y * this.dimension.x + p.x];
-            }
-        }
+    getId(pos) {
+        return OrthographicMap.getId(this.map, pos, this.dimension.x);
+    }
+
+    indexAt(pos) {
+        return OrthographicMap.indexAt(pos, this.size);
     }
 
 }
+
 
 
 class OrthographicCamera {
@@ -1575,48 +1703,47 @@ class OrthographicCamera {
     }
 }
 
-
 const Tile = {
 
-	Map: {
-		Orthographic: OrthographicMap
-	},
+    Map: {
+        Orthographic: OrthographicMap
+    },
 
-	Camera: {
-		Orthographic: OrthographicCamera	
-	}
+    Camera: {
+        Orthographic: OrthographicCamera    
+    }
 
 }
 
 
 Object.defineProperties(HTMLElement.prototype, {
 
-	css: {
-		value: function(styles) {
-			if(!styles instanceof Object) 
-				throw new Error(`CSS Styling data must be an instanceof an Object`)
-			let res = "";
-			for(const key in styles) {
-				this.style[key] = styles[key];
-			}
-		}
-	},
+    css: {
+        value: function(styles) {
+            if(!styles instanceof Object) 
+                throw new Error(`CSS Styling data must be an instanceof an Object`)
+            let res = "";
+            for(const key in styles) {
+                this.style[key] = styles[key];
+            }
+        }
+    },
 
-	setCss: {
-		value: function(key, value) {
-			this.styles[key] = value;
-		}
-	},
+    setCss: {
+        value: function(key, value) {
+            this.styles[key] = value;
+        }
+    },
 
-	attr: {
-		value: function(attrs) {
-			if(!attrs instanceof Object) 
-				throw new Error(`ATTR data must be an instanceof an Object`)
-			for(const key in attrs) {
-				this[key] = attrs[key];
-			}
-		}
-	}
+    attr: {
+        value: function(attrs) {
+            if(!attrs instanceof Object) 
+                throw new Error(`ATTR data must be an instanceof an Object`)
+            for(const key in attrs) {
+                this[key] = attrs[key];
+            }
+        }
+    }
 
 });
 
@@ -1633,19 +1760,19 @@ Object.defineProperties(HTMLElement.prototype, {
 */
 
 class GameArea {
-	/**
-	* @constructor
-	* @param {Number} w width of the scene
-	* @param {Number} h height of the scene
-	* @param {Object | String} config configuration data of the scene
-	*/
-	constructor(w, h, config) {
+    /**
+    * @constructor
+    * @param {Number} w width of the scene
+    * @param {Number} h height of the scene
+    * @param {Object | String} config configuration data of the scene
+    */
+    constructor(w, h, config) {
         this.w = w || 300;
         this.h = h || 300;
         this.config = config;
         this.state = false;
-		// game section
-		this.section = document.createElement("section");
+        // game section
+        this.section = document.createElement("section");
         this.section.style.margin = "0";
         this.state = false;
 
@@ -1661,8 +1788,8 @@ class GameArea {
         this._allScenes = [];
         this.files = [];
         this._preloadScene.start();
-        document.body.appendChild(this.section);
-	}
+        document.body.insertBefore(this.section, document.body.childNodes[0]);
+    }
 
     getArea() {
         return this.section;
@@ -1721,7 +1848,7 @@ class GameArea {
             if(this._mirielleScene.state) {
                 // has every assets been loaded ?
                 if(this.config.preload.length !== 0) {
-                    if(this._preloadScene.state) {
+                    if(this._preloadScene.done) {
                         clearInterval(mainInterval);
                         this.state = true;
                         this.files.push(this._preloadScene._preloadedFiles);
@@ -1745,6 +1872,14 @@ class GameArea {
         }); 
     }
 
+    setWidth(w) {
+        this.w = w;
+    }
+
+    setHeight(h) {
+        this.h = h;
+    }
+
     getWidth() {
         return this.w;
     }
@@ -1752,7 +1887,7 @@ class GameArea {
     getHeight() {
         return this.h;
     }
-		
+        
 };
 
 
@@ -1763,123 +1898,98 @@ class GameArea {
 */
 class MirielleScene {
 
-	/**
-	* @constructor
-	* @params {HTMLSectionElement} parent of this scene
-	* @param {Number} w width of the scene
-	* @param {Number} h height of the scene
-	*/
-	constructor(parent, w, h, config) {
-		// create the scene
-		this._parent = parent;
-		this._canvas = document.createElement("canvas");
-		this._canvas.width = w;
-		this._canvas.height = h;
-		this._canvas.style.position = "absolute";
-		this.state = false;
-		this._parent.appendChild(this._canvas);
-
-		// configurations
-		this.config = config;
-		this.ctx = this._canvas.getContext("2d");
-
-		let styles = {
-			duration: Math.max(5, config.duration || 5),
-			fontSize: Math.max(35, config.fontSize) || 35,
-			fontFamily: Math.max(35, config.fontFamily) || "Verdana"
-		};
-
-		// set themes
-		if(this.config.theme === "dark")
-			this._canvas.style.backgroundColor = "#222";
-		else if (this.config.theme === "light")
-			this._canvas.style.backgroundColor = "#fff";
-		else this.config.theme = "light";
-
-		// draw logo
-		this.ctx.beginPath();
-		this.ctx.moveTo(w/2, h/2 - 20);
-		for(let i=0; i <= 360; i+=60) {
-			let angle = i * Math.PI / 180;
-			let radius = styles.fontSize * 3;
-			let x = w/2 + Math.cos(angle) * radius;
-			let y = (h/2 - 20) + Math.sin(angle) * radius;
-			this.ctx.lineTo(x, y);
-		}
-		this.ctx.fillStyle = this.config.theme === "light" ? "dimgray" : "#333";
-		this.ctx.fill();
-
-		// bat text
-		this.ctx.textAlign = "center";
-		this.ctx.textBaseline = "middle";
-		this.ctx.font = `bold ${styles.fontSize}px ${styles.fontFamily}`;
-		this.ctx.fillStyle = this.config.theme === "light" ? "#fff" : "dimgray";
-		this.ctx.fillText("Bat Games", w/2, h/2 - 20);
-
-		// bat description
-		this.ctx.font = `bold ${styles.fontSize - (styles.fontSize-10)}px ${styles.fontFamily}`;
-		this.ctx.fillStyle = "red";
-		this.ctx.fillText("Games API for web developers on a GO", w/2, h/2 + 20);
-
-		// copyright
-		this.ctx.font = `bold 10px ${styles.fontFamily}`;
-		this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#fff";
-		this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 50);
-
-		// hide this scene after timeout of the specified style's duration
-		let timer = setTimeout(() => {
-			clearTimeout(timer);
-			this._parent.removeChild(this._canvas);
-			this.state = true;
-		}, styles.duration * 1000);
-	}
-
-}
-
-
-/**
-* @class preloadScene
-* A class displaying the `Preloading` Screen on 
-* every start of a scene if there's an asset to preload
-*/
-class PreloadScene {
-
     /**
     * @constructor
     * @params {HTMLSectionElement} parent of this scene
-    * @param {HTMLCanvasElement} parent canvas of this scene
     * @param {Number} w width of the scene
     * @param {Number} h height of the scene
     */
     constructor(parent, w, h, config) {
         // create the scene
-        this.parent = parent;
+        this._parent = parent;
         this._canvas = document.createElement("canvas");
         this._canvas.width = w;
         this._canvas.height = h;
         this._canvas.style.position = "absolute";
         this.state = false;
-        this.parent.appendChild(this._canvas);
+        this._parent.appendChild(this._canvas);
 
         // configurations
         this.config = config;
         this.ctx = this._canvas.getContext("2d");
 
+        let styles = {
+            duration: Math.max(5, config.duration || 5),
+            fontSize: Math.max(35, config.fontSize) || 35,
+            fontFamily: Math.max(35, config.fontFamily) || "Verdana"
+        };
+
+        // set themes
+        if(this.config.theme === "dark")
+            this._canvas.style.backgroundColor = "#222";
+        else if (this.config.theme === "light")
+            this._canvas.style.backgroundColor = "#fff";
+        else this.config.theme = "light";
+
+        // draw logo
+        this.ctx.beginPath();
+        this.ctx.moveTo(w/2, h/2 - 20);
+        for(let i=0; i <= 360; i+=60) {
+            let angle = i * Math.PI / 180;
+            let radius = styles.fontSize * 3;
+            let x = w/2 + Math.cos(angle) * radius;
+            let y = (h/2 - 20) + Math.sin(angle) * radius;
+            this.ctx.lineTo(x, y);
+        }
+        this.ctx.fillStyle = this.config.theme === "light" ? "dimgray" : "#333";
+        this.ctx.fill();
+
+        // bat text
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.font = `bold ${styles.fontSize}px ${styles.fontFamily}`;
+        this.ctx.fillStyle = this.config.theme === "light" ? "#fff" : "dimgray";
+        this.ctx.fillText("Bat Games", w/2, h/2 - 20);
+
+        // bat description
+        this.ctx.font = `bold ${styles.fontSize - (styles.fontSize-10)}px ${styles.fontFamily}`;
+        this.ctx.fillStyle = "red";
+        this.ctx.fillText("Games API for web developers on a GO", w/2, h/2 + 20);
+
+        // copyright
+        this.ctx.font = `bold 10px ${styles.fontFamily}`;
+        this.ctx.fillStyle = this.config.theme === "light" ? "#222" : "#fff";
+        this.ctx.fillText("Mirielle "+new Date().getFullYear(), w/2, h - 50);
+
+        // hide this scene after timeout of the specified style's duration
+        let timer = setTimeout(() => {
+            clearTimeout(timer);
+            this._parent.removeChild(this._canvas);
+            this.state = true;
+        }, styles.duration * 1000);
+    }
+
+}
+
+
+class Preload {
+
+    constructor(assets) {
+        if(!assets instanceof Array) 
+            throw new Error("Preload assets must be an instance of an Array");
+
         // preload
-        this.preload = this.config.preload || [];
+        this.preload = assets || [];
         this._preloadedAssetsCounter = 0;
         this._preloadedImages = [];
         this._preloadedAudios = [];
         this._preloadedFiles = [];
-        this._preloadAngle = 0;
-        this._preloadScale = 5;
-        this._preloadColorIndex = 0;
         this._currentLoadingFile = "";
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
             let audExtensions = [".mp3"];
-            let otherExtensions = [".txt"];
+            let otherExtensions = [".txt", ".json", ".obj"];
 
             // group preload assets 
             if(this.preload instanceof Array) {
@@ -1903,7 +2013,26 @@ class PreloadScene {
                 throw TypeError("Failed to initialize preload: Must be an instanceof of an Array");
         }
 
+        this._files = [];
+
+        this.done = false;
+        this.onReady = null;
+        this.onLoading = null;
+
+        this.state = "loading";
     }
+
+    /**
+    * @method loadingFunction
+    * @description funtion to check if preloading is done
+    */
+    loadingFunction() {
+        if(this._preloadedAssetsCounter === this.preload.length) {
+            this.state = "loaded";
+            this.done = true;
+        }
+    }
+
 
     /**
     * @method startPreload
@@ -1912,18 +2041,14 @@ class PreloadScene {
     * all stored in the configuration's preload array
     */
     start() {
-        const loadingFunction = ()  => {
-            if(this._preloadedAssetsCounter === this.config.preload.length) {
-                this.state = true;
-                this.parent.removeChild(this._canvas);
-            }
-        }
-
         this._preloadedImages.forEach(data => {
             this._currentLoadingFile = data.name;
             data.img.addEventListener("load", ()=>{
                 this._preloadedAssetsCounter++;
-                loadingFunction();
+                this.loadingFunction();
+            });
+            data.img.addEventListener("error", () => {
+                this.state = "failed";
             });
             data.img.src = data.src;
         });
@@ -1932,22 +2057,26 @@ class PreloadScene {
             this._currentLoadingFile = data.name;
             data.aud.addEventListener("canplaythrough", ()=>{
                 this._preloadedAssetsCounter++;
-                loadingFunction();
+                this.loadingFunction();
             });
+            data.aud.addEventListener("error", () => {
+                this.state = "failed";
+            })
             data.aud.src = data.src;
         });
 
         const loadFiles = (data, _this) => {
             this._currentLoadingFile = data.name;
+            this.currentFile = data;
             let req = new XMLHttpRequest();
             req.onreadystatechange = function() {
                 if(req.readyState === XMLHttpRequest.DONE) {
                     if(req.status === 200) {
                         _this._preloadedAssetsCounter++;
                         data.res = req.responseText;
-                        loadingFunction();
+                        _this.loadingFunction();
                     } else {
-                        console.error("Bad Internet Connection: Failed to get " + data.src);
+                        _this.state = "failed";
                     }
                 }
             }
@@ -1958,6 +2087,87 @@ class PreloadScene {
         this._preloadedFiles.forEach(file => {
             loadFiles(file, this);
         });
+    }
+
+    /**
+    * @method getMedia
+    * @description get any media files from the preloaded array
+    * @returns {HTMLImageElement | HTMLAudioElement}
+    */
+    getMedia(name, type="img") {
+        if(type === "img" || type === "image") {
+            let res = this._preloadedImages.filter(i => i.name === name)[0];
+            return res.img;
+        }else if(type === "aud" || type === "audio") {
+            let res = this._preloadedAudios.filter(i => i.name === name)[0];
+            return res.aud;
+        } else if(type === "other" || type === "json") {
+            let res = this._preloadedFiles.filter(i => i.name === name)[0];
+            return res.res;
+        }
+    }
+
+    init() {
+        this.start();
+        let interval = setInterval(() => {
+            if(this.done) {
+                clearInterval(interval);
+                if(typeof this.onReady === "function") this.onReady();
+            } else {
+                if(typeof this.onLoading === "function") this.onLoading();
+            }
+        }, 0);
+    }
+
+}
+
+
+
+
+/**
+* @class preloadScene
+* A class displaying the `Preloading` Screen on 
+* every start of a scene if there's an asset to preload
+*/
+class PreloadScene extends Preload {
+
+    /**
+    * @constructor
+    * @params {HTMLSectionElement} parent of this scene
+    * @param {HTMLCanvasElement} parent canvas of this scene
+    * @param {Number} w width of the scene
+    * @param {Number} h height of the scene
+    */
+    constructor(parent, w, h, config) {
+        super(config.preload);
+        // create the scene
+        this.parent = parent;
+        this._canvas = document.createElement("canvas");
+        this._canvas.width = w;
+        this._canvas.height = h;
+        this._canvas.style.position = "absolute";
+        this.parent.appendChild(this._canvas);
+
+        // configurations
+        this.config = config;
+        this.ctx = this._canvas.getContext("2d");
+
+        // preload
+        this._preloadAngle = 0;
+        this._preloadScale = 5;
+        this._preloadColorIndex = 0;
+        this._currentLoadingFile = "";
+    }
+
+    /**
+    * @method loadingFunction
+    * @description funtion to check if preloading is done
+    */
+    loadingFunction() {
+        if(this._preloadedAssetsCounter === this.preload.length) {
+            this.done = true;
+            this.parent.removeChild(this._canvas);
+        }
     }
 
     /**
@@ -1994,8 +2204,12 @@ class PreloadScene {
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = this.config.mirielle.theme === "dark" ? "lightgray" : "#222";
-        this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
-        this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);
+        if(this.state === "failed")
+            this.ctx.fillText("Error: " + this._currentLoadingFile, W/2, H-50);
+        else {
+            this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
+            this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);    
+        }
     }
 
 }
@@ -2059,6 +2273,14 @@ class Scene {
         return this._canvas.getContext("2d");
     }
 
+    setWidth(w) {
+        this._canvas.width = w;
+    }
+
+    setHeight(h) {
+        this._canvas.height = h;
+    }
+
     getWidth() {
         return this._canvas.width;
     }
@@ -2076,6 +2298,7 @@ class Scene {
     }
 
 }
+
 
 
 // handle cross-platform animation's frame function

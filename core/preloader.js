@@ -1,46 +1,21 @@
-/**
-* @class preloadScene
-* A class displaying the `Preloading` Screen on 
-* every start of a scene if there's an asset to preload
-*/
-class PreloadScene {
+class Preload {
 
-    /**
-    * @constructor
-    * @params {HTMLSectionElement} parent of this scene
-    * @param {HTMLCanvasElement} parent canvas of this scene
-    * @param {Number} w width of the scene
-    * @param {Number} h height of the scene
-    */
-    constructor(parent, w, h, config) {
-        // create the scene
-        this.parent = parent;
-        this._canvas = document.createElement("canvas");
-        this._canvas.width = w;
-        this._canvas.height = h;
-        this._canvas.style.position = "absolute";
-        this.state = false;
-        this.parent.appendChild(this._canvas);
-
-        // configurations
-        this.config = config;
-        this.ctx = this._canvas.getContext("2d");
+    constructor(assets) {
+        if(!assets instanceof Array) 
+            throw new Error("Preload assets must be an instance of an Array");
 
         // preload
-        this.preload = this.config.preload || [];
+        this.preload = assets || [];
         this._preloadedAssetsCounter = 0;
         this._preloadedImages = [];
         this._preloadedAudios = [];
         this._preloadedFiles = [];
-        this._preloadAngle = 0;
-        this._preloadScale = 5;
-        this._preloadColorIndex = 0;
         this._currentLoadingFile = "";
 
         if(this.preload.length !== 0) {
             let imgExtensions = [".jpg", ".gif", ".png"];
             let audExtensions = [".mp3"];
-            let otherExtensions = [".txt"];
+            let otherExtensions = [".txt", ".json", ".obj"];
 
             // group preload assets 
             if(this.preload instanceof Array) {
@@ -64,7 +39,26 @@ class PreloadScene {
                 throw TypeError("Failed to initialize preload: Must be an instanceof of an Array");
         }
 
+        this._files = [];
+
+        this.done = false;
+        this.onReady = null;
+        this.onLoading = null;
+
+        this.state = "loading";
     }
+
+    /**
+    * @method loadingFunction
+    * @description funtion to check if preloading is done
+    */
+    loadingFunction() {
+        if(this._preloadedAssetsCounter === this.preload.length) {
+            this.state = "loaded";
+            this.done = true;
+        }
+    }
+
 
     /**
     * @method startPreload
@@ -73,18 +67,14 @@ class PreloadScene {
     * all stored in the configuration's preload array
     */
     start() {
-        const loadingFunction = ()  => {
-            if(this._preloadedAssetsCounter === this.config.preload.length) {
-                this.state = true;
-                this.parent.removeChild(this._canvas);
-            }
-        }
-
         this._preloadedImages.forEach(data => {
             this._currentLoadingFile = data.name;
             data.img.addEventListener("load", ()=>{
                 this._preloadedAssetsCounter++;
-                loadingFunction();
+                this.loadingFunction();
+            });
+            data.img.addEventListener("error", () => {
+                this.state = "failed";
             });
             data.img.src = data.src;
         });
@@ -93,22 +83,26 @@ class PreloadScene {
             this._currentLoadingFile = data.name;
             data.aud.addEventListener("canplaythrough", ()=>{
                 this._preloadedAssetsCounter++;
-                loadingFunction();
+                this.loadingFunction();
             });
+            data.aud.addEventListener("error", () => {
+                this.state = "failed";
+            })
             data.aud.src = data.src;
         });
 
         const loadFiles = (data, _this) => {
             this._currentLoadingFile = data.name;
+            this.currentFile = data;
             let req = new XMLHttpRequest();
             req.onreadystatechange = function() {
                 if(req.readyState === XMLHttpRequest.DONE) {
                     if(req.status === 200) {
                         _this._preloadedAssetsCounter++;
                         data.res = req.responseText;
-                        loadingFunction();
+                        _this.loadingFunction();
                     } else {
-                        console.error("Bad Internet Connection: Failed to get " + data.src);
+                        _this.state = "failed";
                     }
                 }
             }
@@ -119,6 +113,87 @@ class PreloadScene {
         this._preloadedFiles.forEach(file => {
             loadFiles(file, this);
         });
+    }
+
+    /**
+    * @method getMedia
+    * @description get any media files from the preloaded array
+    * @returns {HTMLImageElement | HTMLAudioElement}
+    */
+    getMedia(name, type="img") {
+        if(type === "img" || type === "image") {
+            let res = this._preloadedImages.filter(i => i.name === name)[0];
+            return res.img;
+        }else if(type === "aud" || type === "audio") {
+            let res = this._preloadedAudios.filter(i => i.name === name)[0];
+            return res.aud;
+        } else if(type === "other" || type === "json") {
+            let res = this._preloadedFiles.filter(i => i.name === name)[0];
+            return res.res;
+        }
+    }
+
+    init() {
+        this.start();
+        let interval = setInterval(() => {
+            if(this.done) {
+                clearInterval(interval);
+                if(typeof this.onReady === "function") this.onReady();
+            } else {
+                if(typeof this.onLoading === "function") this.onLoading();
+            }
+        }, 0);
+    }
+
+}
+
+
+
+
+/**
+* @class preloadScene
+* A class displaying the `Preloading` Screen on 
+* every start of a scene if there's an asset to preload
+*/
+class PreloadScene extends Preload {
+
+    /**
+    * @constructor
+    * @params {HTMLSectionElement} parent of this scene
+    * @param {HTMLCanvasElement} parent canvas of this scene
+    * @param {Number} w width of the scene
+    * @param {Number} h height of the scene
+    */
+    constructor(parent, w, h, config) {
+        super(config.preload);
+        // create the scene
+        this.parent = parent;
+        this._canvas = document.createElement("canvas");
+        this._canvas.width = w;
+        this._canvas.height = h;
+        this._canvas.style.position = "absolute";
+        this.parent.appendChild(this._canvas);
+
+        // configurations
+        this.config = config;
+        this.ctx = this._canvas.getContext("2d");
+
+        // preload
+        this._preloadAngle = 0;
+        this._preloadScale = 5;
+        this._preloadColorIndex = 0;
+        this._currentLoadingFile = "";
+    }
+
+    /**
+    * @method loadingFunction
+    * @description funtion to check if preloading is done
+    */
+    loadingFunction() {
+        if(this._preloadedAssetsCounter === this.preload.length) {
+            this.done = true;
+            this.parent.removeChild(this._canvas);
+        }
     }
 
     /**
@@ -155,8 +230,12 @@ class PreloadScene {
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = this.config.mirielle.theme === "dark" ? "lightgray" : "#222";
-        this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
-        this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);
+        if(this.state === "failed")
+            this.ctx.fillText("Error: " + this._currentLoadingFile, W/2, H-50);
+        else {
+            this.ctx.fillText("Loading..." + this._currentLoadingFile, W/2, H-50);
+            this.ctx.fillText(`${this._preloadedAssetsCounter + 1} of ${this.preload.length}`, W/2, H-20);    
+        }
     }
 
 }

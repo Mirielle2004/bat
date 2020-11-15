@@ -38,7 +38,7 @@ class GameArea {
         this._allScenes = [];
         this.files = [];
         this._preloadScene.start();
-        document.body.appendChild(this.section);
+        document.body.insertBefore(this.section, document.body.childNodes[0]);
 	}
 
     getArea() {
@@ -98,7 +98,7 @@ class GameArea {
             if(this._mirielleScene.state) {
                 // has every assets been loaded ?
                 if(this.config.preload.length !== 0) {
-                    if(this._preloadScene.state) {
+                    if(this._preloadScene.done) {
                         clearInterval(mainInterval);
                         this.state = true;
                         this.files.push(this._preloadScene._preloadedFiles);
@@ -120,6 +120,14 @@ class GameArea {
             if(ele instanceof HTMLElement)
                 this._allScenes.push(ele);
         }); 
+    }
+
+    setWidth(w) {
+        this.w = w;
+    }
+
+    setHeight(h) {
+        this.h = h;
     }
 
     getWidth() {

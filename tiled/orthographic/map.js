@@ -1,24 +1,54 @@
 class OrthographicMap {
+    /**
+    * @method checkType
+    * @description check the type of an array
+    * @param {array} the array
+    * returns {String}
+    */
+    static checkType(array) {
+        if(array[0][0] !== undefined)
+            return "2D";
+        return "1D";
+    }
 
-    static getMapId(map, pos) {
-        let p = Vec2d.createFrom(pos);
-        if (map.type === "2D") {
-            if(map.dataType === "number")
-                return map.map[p.y][p.x];
-            else if(map.dataType === "string")
-                return map.map[p.y][0][p.x];
-        } else if(map.type === "1D"){
-            if(map.dataType === "number")
-                return map.map[p.y * map.dimension.x + p.x];
-            else if(map.dataType === "string"){
-                return map.map[0][p.y * map.dimension.x + p.x];
-            }
+    /**
+    * @method getId
+    * @description get the value from an array using the index
+    * @param {array} the array
+    * @param {pos} the index as a vector
+    * @param {dimensionX} (for 1D array) the number of columns
+    * returns {Number}
+    */
+    static getId(array, poss, dimensionX) {
+        let pos = Vec2d.createFrom(poss);
+        if(OrthographicMap.checkType(array) === "2D") {
+            return array[pos.y][pos.x];
+        } else if(OrthographicMap.checkType(array) === "1D") {
+            return array[pos.y * dimensionX + pos.x];
         }
     }
 
-    static getTileSetIndex(pos, col) {
-        let v = Vec2d.createFrom(pos);
-        return new Vec2d(v.x % col, v.y / col);
+    static setId(array, poss, dimensionX, value) {
+        let pos = Vec2d.createFrom(poss);
+        array[pos.y * dimensionX + pos.x] = value;
+    }
+
+    /**
+    * @method indexAt
+    * @description get the index from an array using the position
+    * @param {pos} the postion as a vector
+    * @param {size} size of each tile in the map as a vector
+    * returns {Number}
+    */
+    static indexAt(pos, size) {
+        let newPos = Vec2d.createFrom(pos);
+        let newSize = Vec2d.createFrom(size);
+        return new Vec2d(~~(newPos.x / newSize.x), ~~(newPos.y / newSize.y));
+    }
+
+
+    static getTileSetIndex(value, col) {
+        return new Vec2d(~~(value % col), ~~(value / col));
     }
     /**
      * @constructor
@@ -82,26 +112,18 @@ class OrthographicMap {
         for (let r = this.minView.y; r < this.maxView.y; r++) {
             for (let c = this.minView.x; c < this.maxView.x; c++) {
                 this.index = new Vec2d(c, r);
-                this.id = OrthographicMap.getMapId(this, this.index);
+                this.id = this.getId(this.index);
                 callback();
             }
         }
     }
 
-    getID(pos) {
-        let p = Vec2d.createFrom(pos);
-        if (this.type === "2D") {
-            if(this.dataType === "number")
-                return this.map[p.y][p.x];
-            else if(this.dataType === "string")
-                return this.map[p.y][0][p.x];
-        } else if(this.type === "1D"){
-            if(this.dataType === "number")
-                return this.map[p.y * this.dimension.x + p.x];
-            else if(this.dataType === "string"){
-                return this.map[0][p.y * this.dimension.x + p.x];
-            }
-        }
+    getId(pos) {
+        return OrthographicMap.getId(this.map, pos, this.dimension.x);
+    }
+
+    indexAt(pos) {
+        return OrthographicMap.indexAt(pos, this.size);
     }
 
 }
