@@ -1,4 +1,5 @@
-import * as g from "../bat/bat.js";
+ import * as g from "../bat/bat.js";
+//import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.3-alpha/bat.js";
 
 let ctx;
 
@@ -155,5 +156,6 @@ let level = [
 ];
 
 /**
+// import * as g from "../bat/bat.js";
 "https://cdn.jsdelivr.net/gh/Mirielle2004/modular-test@master/relll.js"
 */
