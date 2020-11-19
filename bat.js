@@ -33,7 +33,7 @@ export const Bat = {
     version: "0.0.2-alpha",
     date: "19th Nov. 2020",
     license: "MIT",
-    version: "@v0.0.5-alpha"
+    version: "@v0.0.8-alpha"
 };
 
 
