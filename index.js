@@ -1,5 +1,5 @@
- import * as g from "../bat/bat.js";
-//import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.3-alpha/bat.js";
+// import * as g from "../bat/bat.js";
+import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.5-alpha/bat.js";
 
 let ctx;
 

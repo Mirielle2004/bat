@@ -31,38 +31,39 @@
 export const Bat = {
     author: "Mirielle S.",
     version: "0.0.2-alpha",
-    date: "",
-    license: "MIT"
+    date: "19th Nov. 2020",
+    license: "MIT",
+    version: "@v0.0.5-alpha"
 };
 
 
 // maths
-export {Vec2d as Vector2} from "../bat/lib/maths/vectors/vec2d.js";
-export {Vec3d as Vector3} from "../bat/lib/maths/vectors/vec3d.js";
-export {Mat3x3} from "../bat/lib/maths/matrices/mat3x3.js";
-export {Mat4x4} from "../bat/lib/maths/matrices/mat4x4.js";
+export {Vec2d as Vector2} from `../bat${Bat.version}/lib/maths/vectors/vec2d.js`;
+export {Vec3d as Vector3} from "../bat${Bat.version}/lib/maths/vectors/vec3d.js";
+export {Mat3x3} from "../bat${Bat.version}/lib/maths/matrices/mat3x3.js";
+export {Mat4x4} from "../bat${Bat.version}/lib/maths/matrices/mat4x4.js";
 
 
 // components
-export {Component} from "../bat/lib/components/components.js";
+export {Component} from "../bat${Bat.version}/lib/components/components.js";
 
 
 // physics
-export {Collision} from "../bat/lib/physics/collision2D.js";
+export {Collision} from "../bat${Bat.version}/lib/physics/collision2D.js";
 
 
 // controls
-export {Swipe} from "../bat/lib/controls/swipe.js";
-export {JoyStick} from "../bat/lib/controls/joystick.js";
+export {Swipe} from "../bat${Bat.version}/lib/controls/swipe.js";
+export {JoyStick} from "../bat${Bat.version}/lib/controls/joystick.js";
 
 
 // tiled
-export {TileMap} from "../bat/lib/tiled/tilemap.js";
+export {TileMap} from "../bat${Bat.version}/lib/tiled/tilemap.js";
 export {TileCamera} from "../bat/lib/tiled/tilecam.js";
 
 
 // core
-export * as Utils from "../bat/lib/core/utils.js";
-export {Preload as Preloader} from "../bat/lib/core/preloader.js";
-export {Scene} from "../bat/lib/core/scene.js";
-export {GameArea} from "../bat/lib/core/gameArea.js";
+export * as Utils from "../bat${Bat.version}/lib/core/utils.js";
+export {Preload as Preloader} from "../bat${Bat.version}/lib/core/preloader.js";
+export {Scene} from "../bat${Bat.version}/lib/core/scene.js";
+export {GameArea} from "../bat${Bat.version}/lib/core/gameArea.js";
