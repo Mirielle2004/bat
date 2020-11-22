@@ -1,4 +1,4 @@
- import * as g from "../bat@v0.0.10-alpha/bat.js";
+ import * as g from "../bat@v0.0.11-alpha/bat.js";
 //import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.9-alpha/bat.js";
 
 let ctx;
@@ -9,7 +9,7 @@ let config = {
         theme: "navy"
     },
     preload:[
-        {src:"../bat@v0.0.10-alpha/example/isoTileset.png", name:"roygiv"},
+//        {src:"../bat@v0.0.10-alpha/example/isoTileset.png", name:"roygiv"},
 //        {src:"../bat@v0.0.9-alpha/example/test.mp3", name:"test"}
 //        {src:"../bat@v0.0.9-alpha/example/block.png", name:"block"},
 //        {src:"../bat@v0.0.9-alpha/example/img/hero.png", name:"hero"},
@@ -30,9 +30,16 @@ window.addEventListener("load", e => {
         
         scene.css({display:"none"});
         
+        g.Utils.$("#play").css({
+            margin:"10px",
+            border:"2px solid #222",
+            backgroundColo: "lightgray",
+            padding: "10px"
+        });
+        
         
         let preload = new g.Preloader([
-         {src:"../bat@v0.0.10-alpha/example/test.mp3", name:"test"}
+                 {src:"../bat@v0.0.10-alpha/example/isoTileset.png", name:"roygiv"},
         ]);
         
         preload.onLoading = function() {
@@ -43,20 +50,18 @@ window.addEventListener("load", e => {
         
         preload.onReady = function() {
             g.Utils.$("#loading").innerHTML = "Loaded";
+            g.Utils.$("#play").css({
+                backgroundColor: "green",
+                color: "white"
+            });
             let aud = this.getMedia("test", "audio");
-            addEventListener("keydown", e => {
-                if(e.keyCode === 32) {
-                    aud.play();
-                }
-            })
+            g.Utils.$("#play").onclick = () => aud.play();
         }
         
         preload.init();
     }
     
-    scene.update = function() {
-        
-    }
+    scene.update = () => {};
     
     game.init();
     
