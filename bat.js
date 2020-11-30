@@ -30,39 +30,44 @@
 
 export const Bat = {
     author: "Mirielle S.",
-    version: "0.0.2-alpha",
-    date: "22nd Novemeber, 2020",
+    version: "0.0.12-alpha",
+    date: "29nd Novemeber, 2020",
     license: "MIT"
 };
 
 
 // maths
-export {Vec2d as Vector2} from "../bat@v0.0.11-alpha/lib/maths/vectors/vec2d.js";
-export {Vec3d as Vector3} from "../bat@v0.0.11-alpha/lib/maths/vectors/vec3d.js";
-export {Mat3x3} from "../bat@v0.0.11-alpha/lib/maths/matrices/mat3x3.js";
-export {Mat4x4} from "../bat@v0.0.11-alpha/lib/maths/matrices/mat4x4.js";
+export {Vec2d as Vector2} from "../bat@v0.0.12-alpha/lib/maths/vectors/vec2d.js";
+export {Vec3d as Vector3} from "../bat@v0.0.12-alpha/lib/maths/vectors/vec3d.js";
+export {Mat3x3} from "../bat@v0.0.12-alpha/lib/maths/matrices/mat3x3.js";
+export {Mat4x4} from "../bat@v0.0.12-alpha/lib/maths/matrices/mat4x4.js";
 
 
 // components
-export {Component} from "../bat@v0.0.11-alpha/lib/components/components.js";
+export {Component} from "../bat@v0.0.12-alpha/lib/components/components.js";
 
 
 // physics
-export {Collision} from "../bat@v0.0.11-alpha/lib/physics/collision2D.js";
+export {Collision} from "../bat@v0.0.12-alpha/lib/physics/collision2D.js";
 
 
 // controls
-export {Swipe} from "../bat@v0.0.11-alpha/lib/controls/swipe.js";
-export {JoyStick} from "../bat@v0.0.11-alpha/lib/controls/joystick.js";
+export {Swipe} from "../bat@v0.0.12-alpha/lib/controls/swipe.js";
+export {JoyStick} from "../bat@v0.0.12-alpha/lib/controls/joystick.js";
 
 
 // tiled
-export {TileMap} from "../bat@v0.0.11-alpha/lib/tiled/tilemap.js";
-export {TileCamera} from "../bat@v0.0.11-alpha/lib/tiled/tilecam.js";
+export {TileMap} from "../bat@v0.0.12-alpha/lib/tiled/tilemap.js";
+export {TileCamera} from "../bat@v0.0.12-alpha/lib/tiled/tilecam.js";
+
+
+// scoreboard
+export {FireBase} from "../bat@v0.0.12-alpha/lib/firebase/firebase.js";
 
 
 // core
-export * as Utils from "../bat@v0.0.11-alpha/lib/core/utils.js";
-export {Preload as Preloader} from "../bat@v0.0.11-alpha/lib/core/preloader.js";
-export {Scene} from "../bat@v0.0.11-alpha/lib/core/scene.js";
-export {GameArea} from "../bat@v0.0.11-alpha/lib/core/gameArea.js";
+export * as Utils from "../bat@v0.0.12-alpha/lib/core/utils.js";
+export {StartApp} from "../bat@v0.0.12-alpha/lib/core/mirielleScene.js";
+export {Preload as Preloader} from "../bat@v0.0.12-alpha/lib/core/preloader.js";
+export {Scene} from "../bat@v0.0.12-alpha/lib/core/scene.js";
+export {GameArea} from "../bat@v0.0.12-alpha/lib/core/gameArea.js";

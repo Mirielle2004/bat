@@ -1,158 +1,178 @@
-import * as g from "../bat/bat.js";
-
-let ctx;
+ import * as g from "../bat@v0.0.11-alpha/bat.js";
+//import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.11-alpha/bat.js";
+let scene, ctx;
+let bgMap, tetArray, test;
 
 let config = {
     mirielle: {
         duration: 0,
-        theme: "navy"
+        theme: "dark",
     },
     preload:[
-        {src:"../bat/example/isoTileset.png", name:"roygiv"},
-        {src:"../bat/example/block.png", name:"block"},
-        {src:"../bat/example/walkcycle.png", name:"hero"},
+//        {src:"../bat@v0.0.10-alpha/example/isoTileset.png", name:"roygiv"},
+//        {src:"../bat@v0.0.9-alpha/example/test.mp3", name:"test"}
+//        {src:"../bat@v0.0.9-alpha/example/block.png", name:"block"},
+//        {src:"../bat@v0.0.9-alpha/example/img/hero.png", name:"hero"},
     ]
 };
 
-const cartToIso= pos => g.Vector2.createFrom({
-    x: pos.x - pos.y,
-    y: pos.x + pos.y
-});
+let tileSize = 20;
 
-
-
-window.addEventListener("load", e => {
+const createTetArray = (w, h) => {
+    tetArray = [[], []];
+    let maxX = w / tileSize;
+    let maxY = h / tileSize;
     
-    let game = new g.GameArea(innerWidth, innerHeight, config);    
-    let scene = new g.Scene(game, true);
-    ctx = scene.getContext();
-    
-    let map = new g.TileMap(level, [50, 50], [10, 10]);
-    let wall = new g.TileMap(level, [50, 50], [10, 10]);
-    let cam = new g.TileCamera([0, 0], [200, 200]);
-    let obj = new g.Component.Tile([100, 100], [32, 32]);
-    let velocity = new g.Vector2();
-    let origin = new g.Vector2(innerWidth/2, 50);
-    
-    let img = game.getMedia("roygiv", "img");
-    let block = game.getMedia("block", "img");
-    let hero = game.getMedia("hero", "img");
-    
-    game.onReady = function() {
-        console.log(`Game Started: ${new Date().getTime()}ms`);
-        this.img = this.getMedia("hero", "img");
-    }
-    
-    map.draw = function() {
-        let index = this.index.mult(map.size);
-        let pos = g.TileMap.cartToIso(this.index).mult(this.size);
-//        drawPoint([pos.x, pos.y], 5, "red");
-        
-        if(this.id === 0) {
-            drawTile(pos, map.size, "navy");
+    for(let i=0; i < maxY; i++) {
+        for(let j=0; j < maxX; j++) {
+            let pos = new g.Vector2(j, i).scale(tileSize);
+            tetArray[0].push(pos);
+            tetArray[1].push(0);
         }
     }
-    
-    wall.draw = function() {
-        let index = this.index.mult(map.size);
-        let pos = g.TileMap.cartToIso(this.index).mult(this.size);
-//        drawPoint([pos.x, pos.y], 5, "red");
-        
-        if(this.id === 1) {
-            ctx.drawImage(block, 0, 0, 103, 95, pos.x - 103/3, pos.y -95/2, 103, 98);
-        }
-    }
-    
-    scene.update = function() {
-        let fps = this.getFPS();
-        let ctx = this.ctx;        
-        
-        ctx.save();
-        ctx.translate(origin.x, origin.y);
-        
-        map.render();
-        
-        obj.checkCollision(map, velocity, {
-           left()  {
-               if(obj.currentPos !== 0) {
-                   obj.nextPos = obj.lastPos;
-               }
-           },
-            top() {
-                if(obj.currentPos !== 0) {
-                   obj.nextPos = obj.lastPos;
-               }
-            }
-        });
-        
-        let pPos = g.TileMap.cartToIso(obj.pos);
-        ctx.fillStyle = "red";
-        drawTile(pPos, map.size, "red");
-        ctx.drawImage(hero, 0, 2*64, 64, 64, pPos.x, pPos.y, 123, 123);
-        
-        
-        wall.render();
-        
-        ctx.restore();
-        
-    }
-    
-    addEventListener("keydown", e => {
-        let s = 2;
-        if(e.keyCode === 37) {
-            velocity.x = -s;
-        } else if(e.keyCode === 38) {
-            velocity.y = -s;
-        } else if(e.keyCode === 39) {
-            velocity.x = s;
-        } else if(e.keyCode === 40) {
-            velocity.y = s;
-        } else if(e.keyCode === 32) {
-            
-        }
-    });
-    
-    
-    addEventListener("keyup", e => {
-        velocity = new g.Vector2();
-    });
-    
-    game.init();
-    
-});
-
-const drawPoint = (p, r, c) => {
-    ctx.beginPath();
-    ctx.arc(p[0], p[1], r, 0, 2*Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = c;
-    ctx.fill();
 };
 
-const drawTile = (p, s, c) => {
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + s.x, p.y + s.y/2);
-    ctx.lineTo(p.x, p.y + s.y);
-    ctx.lineTo(p.x - s.x, p.y + s.y/2);
-    ctx.closePath();
-    ctx.fillStyle = c;
-    ctx.fill();
+
+function bgUpdate() {
+    let ctx = this.getContext();
+    createTetArray(this.getWidth(), this.getHeight());
+    tetArray[0].forEach(pos => {
+        ctx.strokeStyle = "dimgray";
+        ctx.strokeRect(pos.x, pos.y, tileSize, tileSize);
+    });    
 }
 
-let level = [
-    1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,1,1,
+function gameUpdate() {
+    test.draw();
+}
+
+const eventHandlers = () => {
+    addEventListener("keydown", e => {
+        test.rotate();
+        console.log(test._tetriminos);
+    });
+}
+
+
+addEventListener("load", () => {
+    
+    var firebaseConfig = {
+        apiKey: "AIzaSyBXoMCwFYRjVOq2sY2K1oqPeVQK41-g6kE",
+        authDomain: "batengine-fc905.firebaseapp.com",
+        databaseURL: "https://batengine-fc905.firebaseio.com",
+        projectId: "batengine-fc905",
+        storageBucket: "batengine-fc905.appspot.com",
+        messagingSenderId: "806815302221",
+        appId: "1:806815302221:web:cfa2c09e2884e7872d5204",
+        measurementId: "G-X2D9ZNZSBK"
+      };
+    
+    let services = {
+        auth: true,
+        database: true, 
+    }
+    
+    let fb = new g.FireBase(firebaseConfig, services);
+    
+    
+    g.Utils.$("#signUp").onclick = () => {
+    fb.createUser("email/password", {
+        email: "helloryu@g.com",
+        password: "junaiziz10",
+        resolve() {
+//            fb.insert("student/"+fb.authResponse.email, {
+//                name: "what the fuck",
+//                age: 14,
+//                email: fb.authResponse.email
+//            })
+            console.log(fb.authResponse);
+        },
+        reject() {
+            console.log(fb.authResponse.message);
+        }
+    });
+    }
+    
+    g.Utils.$("#signIn").onclick = () => {
+//    fb.insert("student/15")
+        fb.deleteDB("student/"+1);
+    }
+    
+    g.Utils.$("#signOut").onclick = () => {
+    fb.logoutUser();
+    }
+    
+    fb.authObserver(() => {
+        if(fb.authResponse)
+        console.log(fb.authResponse.email);
+    });
+    
+    
+    
+//    let bgScene = new g.Scene(200, 420);
+//    bgScene.css({backgroundColor:"black"});
+//    bgScene.update = bgUpdate;
+//    bgScene.start();
+//    
+//    scene = new g.Scene(200, 420, true);
+//    scene.css({
+//        position: "absolute",
+//        left: "0"
+//    });
+//    ctx = scene.getContext();
+//    
+//    test = new TetriMinos(I, "red");
+//    
+//    scene.update = gameUpdate;
+//    scene.start();
+//    
+//    eventHandlers();
+    
+});
+
+
+
+let I = [
+    [0,1,0],
+    [0,1,0],
+    [0,1,0],
 ];
 
-/**
-"https://cdn.jsdelivr.net/gh/Mirielle2004/modular-test@master/relll.js"
-*/
+
+
+class TetriMinos {
+    
+    constructor(tetriminos, color) {
+        this._tetriminos = tetriminos;
+        this._color = color
+    }
+    
+    draw() {
+        for(let r=0; r < this._tetriminos.length; r++) {
+            for(let j=0; j < this._tetriminos.length; j++) {
+                let id = this._tetriminos[r][j];
+                if(id === 1) {
+                    let pos = new g.Vector2(j, r).scale(tileSize);
+                    ctx.fillStyle =  this._color;
+                    ctx.fillRect(pos.x, pos.y, tileSize, tileSize);
+                    ctx.strokeStyle =  "dimgray";
+                    ctx.strokeRect(pos.x, pos.y, tileSize, tileSize);
+                }
+            }
+        }
+    }
+    
+    rotate() {
+        let array = this._tetriminos;
+        let rotatedArray = [];
+        for(let r=0; r < array.length; r++) {
+            rotatedArray.push([]);
+            for(let c=0; c < array[0].length; c++) {
+                let newVal = array[r][c];
+                rotatedArray[r].push(newVal);
+            }
+        }
+        this._tetriminos = rotatedArray;
+    }
+    
+}

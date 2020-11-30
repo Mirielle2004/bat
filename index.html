@@ -5,11 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--CSS-->
     <link rel="stylesheet" href="main.css">
+    
+<!--
+    <script src="https://www.gstatic.com/firebasejs/8.1.1/firebase-app.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.1.1/firebase-analytics.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.1.1/firebase-auth.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.1.1/firebase-database.js"></script>
+-->
+    
+    <script src="example/js/class.js"></script>
     <script type="module" src="index.js"></script>
     <title>Bat.js Library</title>
 </head>
 <body>
-    <p id="loading"></p>
-    <button id="play">Play</button>
+    <section id='author' onclick="window.open('')">
+        Created by Mirielle<br>
+        <img src="../bat@v0.0.12-alpha/example/img/block.png">
+    </section>
+    <section id="start-screen">
+        <h1 style="color:white">Tetris</h1>
+        <h2 style="color:antiquewhite" id="gOver"></h2>
+        <button id="play">Play</button><br>
+        <button id="about">About</button>
+        <p id="preloader"></p>
+        <p><b>Swipe</b> or press the <b>Arrow/[A,D]</b> keys to control Tetriminos</p>
+    </section>
 </body>
 </html>
