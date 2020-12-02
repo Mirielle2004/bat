@@ -1,4 +1,5 @@
-import * as g from "../bat@v0.0.14-alpha/bat.js";
+import * as g from "../bat@v0.0.16-alpha/bat.js";
+//import * as g from "https://cdn.jsdelivr.net/gh/Mirielle2004/bat@v0.0.14-alpha/bat.js";
 
 
 //let assets = [
@@ -13,8 +14,8 @@ import * as g from "../bat@v0.0.14-alpha/bat.js";
 //];
 
 
+console.log("ey");
 
-let s = new g.Swipe(null, "mouse");
 
 const init = () => {
     
