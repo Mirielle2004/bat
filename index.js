@@ -1,4 +1,4 @@
-import * as g from "../bat@v0.0.13-alpha/bat.js";
+import * as g from "../bat@v0.0.14-alpha/bat.js";
 
 
 //let assets = [
